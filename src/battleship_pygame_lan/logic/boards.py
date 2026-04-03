@@ -61,6 +61,26 @@ class Board(BaseGrid):
         start_column: int,
         horizontal: bool = True,
     ) -> bool:
+        """
+        Attempts to place a ship on the board following classic Battleship rules.
+        Ensures the ship doesn't go out of bounds and doesn't touch other ships.
+        Placed ship is heading right way, if horizontal.
+        If horizontal is False, then it'll be heading up.
+
+        Args:
+            ship_type (ShipType): The type and size of the ship to place.
+            start_row (int): The row of the ship's starting point.
+            start_column (int): The column of the ship's starting point.
+            horizontal (bool, optional): True for horizontal placement,
+            False for vertical
+        Raises:
+            ValueError: If the ship is placed out of the board's boundaries.
+            ValueError: If the ship touches or overlaps another already placed ship.
+
+        Returns:
+            bool: True if the ship was successfully placed.
+        """
+
         length: int = ship_type.value
         end_row = start_row if horizontal else start_row - length + 1
         end_column = start_column + length - 1 if horizontal else start_column
@@ -155,12 +175,20 @@ class Radar(BaseGrid):
     def __init__(self, row=10, column=10) -> None:
         super().__init__(row, column)
 
-    def mark_shot_result(self, row: int, column: int, state: FieldState) -> None:
+    def mark_shot_result(self, row: int, column: int, state: ShotResult) -> None:
         """
         Updates the radar with the result of a shot made by the player.
-        Expected state: FieldState.Hit or FieldState.Missed.
         """
         if row >= self.row or row < 0 or column >= self.column or column < 0:
             raise ValueError("Row or column is out of bounds!")
 
-        self._grid[row][column].state = state
+        if state == ShotResult.AlreadyShot:
+            raise ValueError("This position is already marked shot")
+
+        translation = {
+            ShotResult.Miss: FieldState.Missed,
+            ShotResult.Hit: FieldState.Hit,
+            ShotResult.Sunk: FieldState.Hit,
+        }
+
+        self._grid[row][column].state = translation[state]
