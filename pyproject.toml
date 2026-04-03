@@ -27,3 +27,8 @@ indent-style = "space"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
