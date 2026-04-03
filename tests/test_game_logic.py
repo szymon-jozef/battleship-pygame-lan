@@ -32,7 +32,7 @@ def test_shot_miss():
     result = board.shot(0, 0)
 
     assert result is False
-    assert board.board[0][0].state == FieldState.Missed
+    assert board.get_field_state(0, 0) == FieldState.Missed
 
 
 def test_shot_taken():
@@ -46,17 +46,19 @@ def test_shot_taken():
 def test_placing_ship_success():
     board = Board()
     board.place_ship(ShipType.OneMaster, 0, 0)
-    assert board.board[0][0].state == FieldState.Taken
-    assert board.board[0][0].ship.health == 1
+    assert board.get_field_state(0, 0) == FieldState.Taken
+    assert board.get_field_ship(0, 0).health == 1
 
     board.place_ship(ShipType.TwoMaster, 3, 3)
-    assert board.board[3][3].state == FieldState.Taken
-    assert board.board[4][3].state == FieldState.Taken
-    assert board.board[3][3].ship.health == 2
+    assert board.get_field_state(3, 3) == FieldState.Taken
+    assert board.get_field_state(4, 3) == FieldState.Taken
+    assert board.get_field_ship(3, 3).health == 2
     assert (
-        board.board[3][3].ship is board.board[4][3].ship
+        board._board[3][3].ship is board._board[4][3].ship
     )  # check if this is the same ship
-    assert board.board[3][3].ship.id == board.board[4][3].ship.id  # check if id matches
+    assert (
+        board._board[3][3].ship.id == board._board[4][3].ship.id
+    )  # check if id matches
 
 
 @pytest.mark.parametrize(
@@ -93,16 +95,16 @@ def test_game():
     board = Board()
 
     board.place_ship(ShipType.TwoMaster, 1, 1, True)
-    placed_ship = board.board[1][1].ship
+    placed_ship = board.get_field_ship(1, 1)
 
     result_1 = board.shot(1, 1)
     assert result_1 is True
-    assert board.board[1][1].state == FieldState.Hit
+    assert board.get_field_state(1, 1) == FieldState.Hit
     assert placed_ship.health == 1
     assert not placed_ship.is_sunk()
 
     result_2 = board.shot(2, 1)
     assert result_2 is True
-    assert board.board[2][1].state == FieldState.Hit
+    assert board.get_field_state(2, 1) == FieldState.Hit
     assert placed_ship.health == 0
     assert placed_ship.is_sunk() is True

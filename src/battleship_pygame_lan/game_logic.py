@@ -6,6 +6,10 @@ logger = logging.getLogger(__name__)
 
 
 class ShipType(Enum):
+    """
+    Defines the available ship types and their length. Ship length is also it's health
+    """
+
     FourMaster = 4
     ThreeMaster = 3
     TwoMaster = 2
@@ -13,19 +17,37 @@ class ShipType(Enum):
 
 
 class Ship:
+    """
+    Represents a single ship on the board.
+    Every ship has unique ID, type and current health.
+    """
+
     def __init__(self, ship_type: ShipType) -> None:
         self.id = str(uuid.uuid4())
         self.ship_type: ShipType = ship_type
         self.health = self.ship_type.value
 
     def hit(self) -> None:
+        """
+        Decrease the ship's health by 1.
+        """
         self.health -= 1
 
     def is_sunk(self) -> bool:
+        """
+        Checks if the ship is still alive (if we can even call it that lol).
+
+        Returns:
+            bool: True if health if 0 or less, False if it's alive!
+        """
         return self.health <= 0
 
 
 class FieldState(Enum):
+    """
+    Represents the current state of a single field on the board.
+    """
+
     # numbers can be later changed to colors
     Empty = 1
     Taken = 2
@@ -33,9 +55,10 @@ class FieldState(Enum):
     Hit = 4
 
 
-class Field:
+class _Field:
     """
-    Class Field represents one specific game field.
+    Class Field represents one specific game field on the board.
+    Holds its current state and a reference to a Ship (if it's there)
     """
 
     def __init__(self) -> None:
@@ -45,21 +68,50 @@ class Field:
 
 class Board:
     """
-    Board class. It handles most of the game logic.
+    Board class manages the game grid, ship placement and shooting mechanics.
+    Acts as the main logical API for the game.
     """
 
     def __init__(self, x=10, y=10) -> None:
         self.x = x
         self.y = y
-        self.board: list[list[Field]] = [
-            [Field() for _ in range(self.x)] for _ in range(self.y)
+        self._board: list[list[_Field]] = [
+            [_Field() for _ in range(self.x)] for _ in range(self.y)
         ]
+
+    def get_field_state(self, x: int, y: int) -> FieldState:
+        """
+        Returns:
+            FieldState: State of the specified field
+        """
+        return self._board[x][y].state
+
+    def get_field_ship(self, x: int, y: int) -> Ship:
+        """
+        Returns:
+            Ship: Reference to the ship at specified field
+        """
+        return self._board[x][y].ship
 
     def place_ship(
         self, ship_type: ShipType, start_x: int, start_y: int, horizontal: bool = True
-    ):
+    ) -> bool:
         """
-        Place a ship at specified place.
+        Attempts to place a ship on the board following classic Battleship rules.
+        Ensures the ship doesn't go out of bounds and doesn't touch other ships.
+
+        Args:
+            ship_type (ShipType): The type and size of the ship to place.
+            start_x (int): The X coordinate of the ship's starting point.
+            start_y (int): The Y coordinate of the ship's starting point.
+            horizontal (bool, optional): True for horizontal placement,
+            False for vertical
+        Raises:
+            ValueError: If the ship is placed out of the board's boundaries.
+            ValueError: If the ship touches or overlaps another already placed ship.
+
+        Returns:
+            bool: True if the ship was successfully placed.
         """
         length: int = ship_type.value
         end_x = start_x + length - 1 if horizontal else start_x
@@ -79,7 +131,7 @@ class Board:
 
         for i in range(min_x, max_x + 1):
             for j in range(min_y, max_y + 1):
-                if self.board[i][j].state != FieldState.Empty:
+                if self._board[i][j].state != FieldState.Empty:
                     logger.info(
                         f"Player tried putting his ship at ({start_x}, {start_y}), "
                         f"{'horizontally' if horizontal else 'vertically'}, "
@@ -94,8 +146,8 @@ class Board:
             current_x = start_x + i if horizontal else start_x
             current_y = start_y + i if not horizontal else start_y
 
-            self.board[current_x][current_y].state = FieldState.Taken
-            self.board[current_x][current_y].ship = new_ship
+            self._board[current_x][current_y].state = FieldState.Taken
+            self._board[current_x][current_y].ship = new_ship
 
         logger.info(
             f"Ship {ship_type.name} was succesfully placed at ({start_x}, {start_y})"
@@ -103,8 +155,14 @@ class Board:
 
     def shot(self, x: int, y: int) -> bool:
         """
-        Take a shoot at specific field. Return True if something was hit and False if it
-        was a miss.
+        Take a shoot at specific field.
+
+        Raises:
+            ValueError: If the coordinates are out of bounds
+            ValueError: If the field was already shot
+
+        Returns:
+            bool: True if something was hit and False if it was a miss.
         """
         if x >= self.x or x < 0 or y >= self.y or y < 0:
             logger.info(
@@ -112,7 +170,7 @@ class Board:
             )
             raise ValueError("X or Y is out of bounds!")
 
-        pos = self.board[x][y]
+        pos = self._board[x][y]
 
         if pos.state in [FieldState.Hit, FieldState.Missed]:
             logger.info(
