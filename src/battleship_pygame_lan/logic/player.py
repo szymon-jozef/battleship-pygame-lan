@@ -1,7 +1,7 @@
 import logging
 
 from .boards import Board, Radar
-from .enums import ShipType, ShotResult
+from .enums import FieldState, ShipType, ShotResult
 
 logger = logging.getLogger(__name__)
 
@@ -71,3 +71,9 @@ class Player:
     def is_dead(self) -> bool:
         """Returns: True if player doesn't have any ships left on the battlefield"""
         return self.board.is_game_over()
+
+    def get_own_board_state(self, row: int, column: int) -> FieldState:
+        return self.board.get_field_state(row, column)
+
+    def get_radar_state(self, row: int, column: int) -> FieldState:
+        return self.radar.get_field_state(row, column)
