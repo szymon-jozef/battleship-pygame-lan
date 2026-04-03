@@ -16,7 +16,7 @@ class Board:
         self.x = x
         self.y = y
         self._board: list[list[_Field]] = [
-            [_Field() for _ in range(self.x)] for _ in range(self.y)
+            [_Field() for _ in range(self.y)] for _ in range(self.x)
         ]
 
     def __str__(self) -> str:
@@ -43,7 +43,7 @@ class Board:
         """
         return self._board[x][y].state
 
-    def get_field_ship(self, x: int, y: int) -> Ship:
+    def get_field_ship(self, x: int, y: int) -> Ship | None:
         """
         Returns:
             Ship: Reference to the ship at specified field
@@ -110,7 +110,7 @@ class Board:
             f"Ship {ship_type.name} was succesfully placed at ({start_x}, {start_y})"
         )
 
-    def shot(self, x: int, y: int) -> bool:
+    def shoot(self, x: int, y: int) -> bool:
         """
         Take a shoot at specific field.
 

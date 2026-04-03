@@ -1,14 +1,6 @@
-import logging
-
 import pytest
 
 from battleship_pygame_lan.logic import Board, FieldState, Ship, ShipType
-
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(filename="tests/tests.log", level=logging.DEBUG)
-
-logger.info("Started unit testing...")
 
 
 def test_ship_initialization():
@@ -29,10 +21,10 @@ def test_board_initialization():
     board = Board(10, 10)
 
     with pytest.raises(ValueError, match="out of bounds"):
-        board.shot(10, 10)
+        board.shoot(10, 10)
 
     with pytest.raises(ValueError, match="out of bounds"):
-        board.shot(-1, 5)
+        board.shoot(-1, 5)
 
 
 def test_board_str_rows():
@@ -52,7 +44,7 @@ def test_board_str_rows():
 
 def test_shot_miss():
     board = Board()
-    result = board.shot(0, 0)
+    result = board.shoot(0, 0)
 
     assert result is False
     assert board.get_field_state(0, 0) == FieldState.Missed
@@ -60,10 +52,10 @@ def test_shot_miss():
 
 def test_shot_taken():
     board = Board()
-    board.shot(0, 0)
+    board.shoot(0, 0)
 
     with pytest.raises(ValueError, match="This place was already shot!"):
-        board.shot(0, 0)
+        board.shoot(0, 0)
 
 
 def test_placing_ship_success():
@@ -118,13 +110,13 @@ def test_game():
     board.place_ship(ShipType.TwoMaster, 1, 1, True)
     placed_ship = board.get_field_ship(1, 1)
 
-    result_1 = board.shot(1, 1)
+    result_1 = board.shoot(1, 1)
     assert result_1 is True
     assert board.get_field_state(1, 1) == FieldState.Hit
     assert placed_ship.health == 1
     assert not placed_ship.is_sunk()
 
-    result_2 = board.shot(2, 1)
+    result_2 = board.shoot(2, 1)
     assert result_2 is True
     assert board.get_field_state(2, 1) == FieldState.Hit
     assert placed_ship.health == 0
