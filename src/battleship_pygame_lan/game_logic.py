@@ -55,7 +55,53 @@ class Board:
             [Field() for _ in range(self.x)] for _ in range(self.y)
         ]
 
-    def shoot(self, x: int, y: int) -> bool:
+    def place_ship(
+        self, ship_type: ShipType, start_x: int, start_y: int, horizontal: bool
+    ):
+        """
+        Place a ship at specified place.
+        """
+        length: int = ship_type.value
+        end_x = start_x + length - 1 if horizontal else start_x
+        end_y = start_y + length - 1 if not horizontal else start_y
+
+        if end_x >= self.x or end_y >= self.y or start_x < 0 or start_y < 0:
+            logger.info(
+                f"Player tried putting his ship of length {length} at: "
+                f"[start: ({start_x}, {start_y}), end: ({end_x}, {end_y})]"
+            )
+            raise ValueError("X or Y is out of bounds!")
+
+        min_x = max(start_x - 1, 0)
+        max_x = min(self.x - 1, end_x + 1)
+        min_y = max(start_y - 1, 0)
+        max_y = min(self.y - 1, end_y + 1)
+
+        for i in range(min_x, max_x + 1):
+            for j in range(min_y, max_y + 1):
+                if self.board[i][j].state != FieldState.Empty:
+                    logger.info(
+                        f"Player tried putting his ship at ({start_x}, {start_y}), "
+                        f"{'horizontally' if horizontal else 'vertically'}, "
+                        f"but he cannot do that, because field ({i}, {j}) is already "
+                        "taken"
+                    )
+                    raise ValueError("Field nearby is taken")
+
+        new_ship = Ship(ship_type)
+
+        for i in range(length):
+            current_x = start_x + i if horizontal else start_x
+            current_y = start_y + i if not horizontal else start_y
+
+            self.board[current_x][current_y].state = FieldState.Taken
+            self.board[current_x][current_y].ship = new_ship
+
+        logger.info(
+            f"Ship {ship_type.name} was succesfully placed at ({start_x}, {start_y})"
+        )
+
+    def shot(self, x: int, y: int) -> bool:
         """
         Take a shoot at specific field. Return True if something was hit and False if it
         was a miss.
@@ -73,7 +119,7 @@ class Board:
                 f"Player tried shooting at ({x}, {y}), but it was already shot, so no "
                 "action was taken"
             )
-            raise ValueError("This place was already shoot!")
+            raise ValueError("This place was already shot!")
 
         if pos.state == FieldState.Taken:
             logger.info(f"Ship at position ({x}, {y}) was hit!")
