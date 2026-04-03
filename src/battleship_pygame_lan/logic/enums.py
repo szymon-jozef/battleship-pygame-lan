@@ -28,3 +28,20 @@ class FieldState(Enum):
     Taken = 2
     Missed = 3
     Hit = 4
+
+
+class ShotResult(Enum):
+    """
+    Represents the result of a shot.
+
+    Values:
+        Miss
+        Hit
+        Sunk
+        AlreadyShot
+    """
+
+    Miss = 1
+    Hit = 2
+    Sunk = 3
+    AlreadyShot = 4

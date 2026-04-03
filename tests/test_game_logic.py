@@ -1,6 +1,6 @@
 import pytest
 
-from battleship_pygame_lan.logic import Board, FieldState, Ship, ShipType
+from battleship_pygame_lan.logic import Board, FieldState, Ship, ShipType, ShotResult
 
 
 def test_ship_initialization():
@@ -46,7 +46,7 @@ def test_shot_miss():
     board = Board()
     result = board.shoot(0, 0)
 
-    assert result is False
+    assert result == ShotResult.Miss
     assert board.get_field_state(0, 0) == FieldState.Missed
 
 
@@ -54,8 +54,7 @@ def test_shot_taken():
     board = Board()
     board.shoot(0, 0)
 
-    with pytest.raises(ValueError, match="This place was already shot!"):
-        board.shoot(0, 0)
+    assert board.shoot(0, 0) == ShotResult.AlreadyShot
 
 
 def test_placing_ship_success():
@@ -119,7 +118,7 @@ def test_game():
     placed_ship = board.get_field_ship(1, 1)
 
     result_1 = board.shoot(1, 1)
-    assert result_1 is True
+    assert result_1 == ShotResult.Hit
     assert board.get_field_state(1, 1) == FieldState.Hit
     assert placed_ship.health == 1
     assert not placed_ship.is_sunk()
@@ -127,7 +126,7 @@ def test_game():
     assert not board.is_game_over()
 
     result_2 = board.shoot(2, 1)
-    assert result_2 is True
+    assert result_2 == ShotResult.Sunk
     assert board.get_field_state(2, 1) == FieldState.Hit
     assert placed_ship.health == 0
     assert placed_ship.is_sunk() is True

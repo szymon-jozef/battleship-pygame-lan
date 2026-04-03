@@ -1,6 +1,6 @@
 import logging
 
-from .enums import FieldState, ShipType
+from .enums import FieldState, ShipType, ShotResult
 from .models import Ship, _Field
 
 logger = logging.getLogger(__name__)
@@ -112,16 +112,15 @@ class Board:
             f"Ship {ship_type.name} was succesfully placed at ({start_x}, {start_y})"
         )
 
-    def shoot(self, x: int, y: int) -> bool:
+    def shoot(self, x: int, y: int) -> ShotResult:
         """
         Take a shoot at specific field.
 
         Raises:
             ValueError: If the coordinates are out of bounds
-            ValueError: If the field was already shot
 
         Returns:
-            bool: True if something was hit and False if it was a miss.
+            ShotResult: Enum value representing the outcome of the shot
         """
         if x >= self.x or x < 0 or y >= self.y or y < 0:
             logger.info(
@@ -136,7 +135,7 @@ class Board:
                 f"Player tried shooting at ({x}, {y}), but it was already shot, so no "
                 "action was taken"
             )
-            raise ValueError("This place was already shot!")
+            return ShotResult.AlreadyShot
 
         if pos.state == FieldState.Taken:
             logger.info(f"Ship at position ({x}, {y}) was hit!")
@@ -148,12 +147,13 @@ class Board:
                     logger.info(
                         f"Ship {pos.ship.ship_type.name} at ({x}, {y}) was sunk! "
                     )
+                    return ShotResult.Sunk
 
-            return True
+            return ShotResult.Hit
 
         logger.info(f"Player tried shooting at ({x}, {y}), but missed!")
         pos.state = FieldState.Missed
-        return False
+        return ShotResult.Miss
 
     def is_game_over(self) -> bool:
         """
