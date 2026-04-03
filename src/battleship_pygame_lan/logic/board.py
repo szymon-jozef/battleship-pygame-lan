@@ -57,6 +57,8 @@ class Board:
         """
         Attempts to place a ship on the board following classic Battleship rules.
         Ensures the ship doesn't go out of bounds and doesn't touch other ships.
+        Placed ship is heading right way, if horizontal.
+        If horizontal is False, then it'll by heading up.
 
         Args:
             ship_type (ShipType): The type and size of the ship to place.
@@ -72,8 +74,8 @@ class Board:
             bool: True if the ship was successfully placed.
         """
         length: int = ship_type.value
-        end_x = start_x + length - 1 if horizontal else start_x
-        end_y = start_y + length - 1 if not horizontal else start_y
+        end_x = start_x if horizontal else start_x - length + 1
+        end_y = start_y + length - 1 if horizontal else start_y
 
         if end_x >= self.x or end_y >= self.y or start_x < 0 or start_y < 0:
             logger.info(
@@ -82,8 +84,8 @@ class Board:
             )
             raise ValueError("X or Y is out of bounds!")
 
-        min_x = max(start_x - 1, 0)
-        max_x = min(self.x - 1, end_x + 1)
+        min_x = max(min(start_x, end_x) - 1, 0)
+        max_x = min(self.x - 1, max(start_x, end_x) + 1)
         min_y = max(start_y - 1, 0)
         max_y = min(self.y - 1, end_y + 1)
 
@@ -101,8 +103,8 @@ class Board:
         new_ship = Ship(ship_type)
 
         for i in range(length):
-            current_x = start_x + i if horizontal else start_x
-            current_y = start_y + i if not horizontal else start_y
+            current_x = start_x if horizontal else start_x - i
+            current_y = start_y + i if horizontal else start_y
 
             self._board[current_x][current_y].state = FieldState.Taken
             self._board[current_x][current_y].ship = new_ship

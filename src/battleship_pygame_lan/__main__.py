@@ -11,6 +11,7 @@ def main() -> None:
     # dirty code test
     board = Board()
     board.place_ship(ShipType.OneMaster, 1, 1)
+    board.place_ship(ShipType.FourMaster, 5, 5, False)
     print(str(board))
     board.shoot(1, 1)
     print(str(board))
