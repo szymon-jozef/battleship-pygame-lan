@@ -1,4 +1,4 @@
-from .board import Board, Radar
+from .boards import Board, Radar
 from .enums import FieldState, ShipType, ShotResult
 from .models import Ship
 
