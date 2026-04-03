@@ -53,12 +53,10 @@ def test_placing_ship_success():
     assert board.get_field_state(3, 3) == FieldState.Taken
     assert board.get_field_state(4, 3) == FieldState.Taken
     assert board.get_field_ship(3, 3).health == 2
-    assert (
-        board._board[3][3].ship is board._board[4][3].ship
-    )  # check if this is the same ship
-    assert (
-        board._board[3][3].ship.id == board._board[4][3].ship.id
-    )  # check if id matches
+    ship_1 = board.get_field_ship(3, 3)
+    ship_2 = board.get_field_ship(4, 3)
+    assert ship_1 is ship_2  # check if this is the same ship
+    assert ship_1.id == ship_2.id  # check if id matches
 
 
 @pytest.mark.parametrize(
