@@ -36,7 +36,7 @@ def test_board_initialization():
 
 def test_radar_initialization():
     radar = Radar()
-    radar.mark_shot_result(2, 2, FieldState.Hit)
+    radar.mark_shot_result(2, 2, ShotResult.Hit)
     lines = str(radar).strip().split("\n")
     assert "x" in lines[3]
     assert radar.get_field_state(2, 2) == FieldState.Hit
