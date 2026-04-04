@@ -1,0 +1,98 @@
+from enum import Enum
+from json import dumps
+
+from battleship_pygame_lan.logic import ShotResult
+
+"""
+What communication do we want?
+
+# Player - Player
+- I attacked you
+- You attacked me and you missed/hit
+
+I thinks that's all for that.
+
+This is represented by PayloadTypes.ATTACK and PayloadTypes.SHOT_RESULT
+
+# Player - server
+- I placed all my ships, please note that I'm ready
+- Okay!
+
+Represented by PayloadTypes.READY
+
+- I lost all my ships, please end the game!
+- Okey dokey
+
+Represented by PayloadTypes.END
+
+# Server - player
+- Player {player} has lost! Please stop playing
+- Ok
+
+Represented by PayloadTypes.GAME_OVER
+
+"""
+
+
+class PayloadTypes(str, Enum):
+    """
+    Enum representing types a payload can send
+    """
+
+    ATTACK = "attack"
+    SHOT_RESULT = "shot_result"
+    READY = "ready"
+    START = "start"
+    END = "end"
+    GAME_OVER = "game_over"
+
+
+def build_attack_payload(row: int, column: int) -> str:
+    """
+    Payload player sends to the oponent, saying which place he wants to attack
+    """
+    return dumps({"type": PayloadTypes.ATTACK, "row": row, "column": column})
+
+
+def build_shot_result_payload(row: int, column: int, result: ShotResult) -> str:
+    """
+    Payload player sends to the oponent, saying if the oponent hit any ship
+    """
+    return dumps(
+        {
+            "type": PayloadTypes.SHOT_RESULT,
+            "row": row,
+            "column": column,
+            "result": result.name,
+        }
+    )
+
+
+def build_ready_payload(player_name: str, status: bool = True) -> str:
+    """
+    Payload player sends to the server, saying if he is ready to start the game
+    """
+    return dumps(
+        {"type": PayloadTypes.READY, "player_name": player_name, "status": status}
+    )
+
+
+def build_start_payload(start: bool = True) -> str:
+    """
+    Payload server sends to the players, saying it's time to start the game
+    """
+    return dumps({"type": PayloadTypes.START, "start": start})
+
+
+def build_end_payload(end: bool = True) -> str:
+    """
+    Payload player sends to the server, saying he lost all ships
+    """
+    return dumps({"type": PayloadTypes.END, "end": end})
+
+
+def build_game_over_payload(over: bool = True) -> str:
+    """
+    Payload server sends to the player, saying the game was has ended
+    """
+    return dumps({"type": PayloadTypes.GAME_OVER, "over": over})
