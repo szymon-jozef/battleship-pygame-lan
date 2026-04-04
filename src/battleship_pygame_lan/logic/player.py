@@ -66,10 +66,18 @@ class Player:
         self.available_ships[ship_type] -= 1
         return True
 
-    def take_shot(self, row: int, column: int, shot_result: ShotResult) -> None:
-        """Mark your shot on the radar"""
+    def mark_shot(self, row: int, column: int, shot_result: ShotResult) -> None:
+        """
+        Mark your shot on the radar
+
+        Important:
+            This method only marks the field on the radar with shot_result value.
+            It doesn't validate anything.
+            Chosen row and column should be validated for repeated shots, before
+            shooting calling it this method
+        """
         logger.info(
-            f"Player {self.name} marked ({row}, {column}) as {ShotResult} on his radar"
+            f"Player {self.name} marked ({row}, {column}) as {shot_result} on his radar"
         )
         self.radar.mark_shot_result(row, column, shot_result)
 
@@ -77,15 +85,17 @@ class Player:
         logger.info(f"Player {self.name} received a shot at ({row}, {column})")
         return self.board.shoot(row, column)
 
+    @property
     def is_every_ship_placed(self) -> bool:
         """Returns: True if player doesn't have any more ships left in his bay"""
         return (
             sum(self.available_ships.values()) <= 0
         )  # if there is more than 0 ships it will return false
 
+    @property
     def is_dead(self) -> bool:
         """Returns: True if player doesn't have any ships left on the battlefield"""
-        return self.board.is_game_over()
+        return self.board.is_game_over
 
     def get_own_board_state(self, row: int, column: int) -> FieldState:
         return self.board.get_field_state(row, column)

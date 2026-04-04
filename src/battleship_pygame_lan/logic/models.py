@@ -20,6 +20,7 @@ class Ship:
         """
         self.health -= 1
 
+    @property
     def is_sunk(self) -> bool:
         """
         Checks if the ship is still alive (if we can even call it that lol).

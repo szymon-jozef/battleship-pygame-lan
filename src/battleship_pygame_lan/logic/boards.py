@@ -159,7 +159,7 @@ class Board(BaseGrid):
 
             if pos.ship:
                 pos.ship.hit()
-                if pos.ship.is_sunk():
+                if pos.ship.is_sunk:
                     logger.info(f"Ship {pos.ship.ship_type.name} was sunk!")
                     return ShotResult.Sunk
             return ShotResult.Hit
@@ -168,10 +168,11 @@ class Board(BaseGrid):
         pos.state = FieldState.Missed
         return ShotResult.Miss
 
+    @property
     def is_game_over(self) -> bool:
         if not self._ships:
             return False
-        return all(ship.is_sunk() for ship in self._ships)
+        return all(ship.is_sunk for ship in self._ships)
 
 
 class Radar(BaseGrid):

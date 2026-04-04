@@ -17,7 +17,7 @@ from battleship_pygame_lan.logic import (
 def test_ship_initialization():
     ship = Ship(ShipType.ThreeMaster)
     assert ship.health == 3
-    assert not ship.is_sunk()
+    assert not ship.is_sunk
 
 
 def test_ship_hit_sink():
@@ -25,7 +25,7 @@ def test_ship_hit_sink():
     ship.hit()
 
     assert ship.health == 0
-    assert ship.is_sunk() is True
+    assert ship.is_sunk is True
 
 
 def test_board_initialization():
@@ -128,7 +128,7 @@ def test_shooting_two_times():
     player = Player("morbius")
 
     with pytest.raises(AlreadyShotError):
-        player.take_shot(1, 1, ShotResult.AlreadyShot)
+        player.mark_shot(1, 1, ShotResult.AlreadyShot)
 
 
 def test_placing_ship_collision():
@@ -148,9 +148,9 @@ def test_placing_ship_collision():
 def test_game_over():
     board = Board()
     board.place_ship(ShipType.OneMaster, 1, 1)
-    assert not board.is_game_over()
+    assert not board.is_game_over
     board.shoot(1, 1)
-    assert board.is_game_over()
+    assert board.is_game_over
 
 
 def test_game():
@@ -163,14 +163,14 @@ def test_game():
     assert result_1 == ShotResult.Hit
     assert board.get_field_state(1, 1) == FieldState.Hit
     assert placed_ship.health == 1
-    assert not placed_ship.is_sunk()
+    assert not placed_ship.is_sunk
 
-    assert not board.is_game_over()
+    assert not board.is_game_over
 
     result_2 = board.shoot(1, 2)
     assert result_2 == ShotResult.Sunk
     assert board.get_field_state(1, 2) == FieldState.Hit
     assert placed_ship.health == 0
-    assert placed_ship.is_sunk() is True
+    assert placed_ship.is_sunk is True
 
-    assert board.is_game_over()
+    assert board.is_game_over
