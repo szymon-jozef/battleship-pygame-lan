@@ -76,7 +76,8 @@ class Board(BaseGrid):
             False for vertical
         Raises:
             OutOfBoundsError: If the ship is placed out of the board's boundaries.
-            NearbyTakenError: If the ship touches or overlaps another already placed ship.
+            NearbyTakenError: If the ship touches or overlaps another already placed
+            ship.
 
         Returns:
             bool: True if the ship was successfully placed.
