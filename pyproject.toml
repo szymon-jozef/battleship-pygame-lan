@@ -38,8 +38,7 @@ check_untyped_defs = true
 files = "src"
 
 [[tool.mypy.overrides]]
-module = "pygame.*"
-module = "pytest.*"
+module = ["pygame.*", "pytest.*"]
 ignore_missing_imports = true 
 
 [dependency-groups]
