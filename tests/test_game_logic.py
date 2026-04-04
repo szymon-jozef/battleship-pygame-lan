@@ -14,13 +14,13 @@ from battleship_pygame_lan.logic import (
 )
 
 
-def test_ship_initialization():
+def test_ship_initialization() -> None:
     ship = Ship(ShipType.ThreeMaster)
     assert ship.health == 3
     assert not ship.is_sunk
 
 
-def test_ship_hit_sink():
+def test_ship_hit_sink() -> None:
     ship = Ship(ShipType.OneMaster)
     ship.hit()
 
@@ -28,7 +28,7 @@ def test_ship_hit_sink():
     assert ship.is_sunk is True
 
 
-def test_board_initialization():
+def test_board_initialization() -> None:
     board = Board(10, 10)
 
     with pytest.raises(OutOfBoundsError):
@@ -38,7 +38,7 @@ def test_board_initialization():
         board.shoot(-1, 5)
 
 
-def test_radar_initialization():
+def test_radar_initialization() -> None:
     radar = Radar()
     radar.mark_shot_result(2, 2, ShotResult.Hit)
     lines = str(radar).strip().split("\n")
@@ -46,14 +46,14 @@ def test_radar_initialization():
     assert radar.get_field_state(2, 2) == FieldState.Hit
 
 
-def test_player_initialization():
+def test_player_initialization() -> None:
     name = "spider-mid"
     player = Player(name)
     assert player.name == name
     assert isinstance(player.board, Board)
 
 
-def test_board_str_rows():
+def test_board_str_rows() -> None:
     board1 = Board(3, 3)
     board1.place_ship(ShipType.TwoMaster, 0, 0)  # (0,0) and (1,0)
 
@@ -77,7 +77,7 @@ def test_board_str_rows():
     assert "s" in lines2[2]
 
 
-def test_shot_miss():
+def test_shot_miss() -> None:
     board = Board()
     result = board.shoot(0, 0)
 
@@ -85,14 +85,14 @@ def test_shot_miss():
     assert board.get_field_state(0, 0) == FieldState.Missed
 
 
-def test_shot_taken():
+def test_shot_taken() -> None:
     board = Board()
     board.shoot(0, 0)
 
     assert board.shoot(0, 0) == ShotResult.AlreadyShot
 
 
-def test_placing_ship_success():
+def test_placing_ship_success() -> None:
     board = Board()
     board.place_ship(ShipType.OneMaster, 0, 0)
     assert board.get_field_state(0, 0) == FieldState.Taken
@@ -118,20 +118,20 @@ def test_placing_ship_success():
         (123, -123),
     ],
 )
-def test_placing_ship_out_of_bounds(x, y):
+def test_placing_ship_out_of_bounds(x: int, y: int) -> None:
     board = Board()
     with pytest.raises(OutOfBoundsError):
         board.place_ship(ShipType.OneMaster, x, y)
 
 
-def test_shooting_two_times():
+def test_shooting_two_times() -> None:
     player = Player("morbius")
 
     with pytest.raises(AlreadyShotError):
         player.mark_shot(1, 1, ShotResult.AlreadyShot)
 
 
-def test_placing_ship_collision():
+def test_placing_ship_collision() -> None:
     board = Board()
     board.place_ship(ShipType.OneMaster, 1, 1)
 
@@ -145,7 +145,7 @@ def test_placing_ship_collision():
         board.place_ship(ShipType.OneMaster, 1, 2)
 
 
-def test_game_over():
+def test_game_over() -> None:
     board = Board()
     board.place_ship(ShipType.OneMaster, 1, 1)
     assert not board.is_game_over
@@ -153,7 +153,7 @@ def test_game_over():
     assert board.is_game_over
 
 
-def test_game():
+def test_game() -> None:
     board = Board()
 
     board.place_ship(ShipType.TwoMaster, 1, 1)
