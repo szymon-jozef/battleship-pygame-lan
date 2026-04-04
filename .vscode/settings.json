@@ -1,9 +1,15 @@
 {
+  "mypy-type-checker.args": [
+      "--config-file=pyproject.toml"
+  ],
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
+      "source.fixAll.ruff" : "always",
+      "source.organizeImports.ruff": "always"
     }
   }
 }

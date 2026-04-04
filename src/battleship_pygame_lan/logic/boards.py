@@ -13,7 +13,7 @@ class BaseGrid:
     Handles basic grid generation, dimensions, and string representation.
     """
 
-    def __init__(self, row=10, column=10) -> None:
+    def __init__(self, row: int = 10, column: int = 10) -> None:
         self.row = row
         self.column = column
         self._grid: list[list[_Field]] = [
@@ -48,7 +48,7 @@ class Board(BaseGrid):
     Acts as the main logical API for the player's own board.
     """
 
-    def __init__(self, row=10, column=10) -> None:
+    def __init__(self, row: int = 10, column: int = 10) -> None:
         super().__init__(row, column)
         self._ships: list[Ship] = []
 
@@ -181,7 +181,7 @@ class Radar(BaseGrid):
     It tracks where the player has shot and the outcome (Hit/Miss).
     """
 
-    def __init__(self, row=10, column=10) -> None:
+    def __init__(self, row: int = 10, column: int = 10) -> None:
         super().__init__(row, column)
 
     def mark_shot_result(self, row: int, column: int, state: ShotResult) -> None:
