@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from json import dumps
 
 from battleship_pygame_lan.logic import ShotResult
@@ -34,7 +34,7 @@ Represented by PayloadTypes.GAME_OVER
 """
 
 
-class PayloadTypes(str, Enum):
+class PayloadTypes(StrEnum):
     """
     Enum representing types a payload can send
     """
