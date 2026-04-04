@@ -1,4 +1,4 @@
-![Tests Status](https://github.com/szymon-jozef/battleship-pygame-lan/actions/workflows/python-tests/badge.svg)
+![Tests Status](https://github.com/szymon-jozef/battleship-pygame-lan/actions/workflows/python-tests.yml/badge.svg)
 # LAN game of battleships made with pygame
 
 # Project state
