@@ -21,16 +21,16 @@ class NetworkServer:
         self.clients: list[socket.socket] = []
         self.ready_players: set[str] = set()
 
-    def handle_client(self, conn: socket.socket, addr):
+    def handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         logger.info(f"[NEW CONNECTION] {addr} connected")
         self.clients.append(conn)
 
         connected: bool = True
         while connected:
-            msg_length = conn.recv(self.HEADER).decode(self.FORMAT).strip()
-            if msg_length:
-                msg_length = int(msg_length)
-                msg = conn.recv(msg_length).decode(self.FORMAT)
+            msg_length_str: str = conn.recv(self.HEADER).decode(self.FORMAT).strip()
+            if msg_length_str:
+                msg_length: int = int(msg_length_str)
+                msg: str = conn.recv(msg_length).decode(self.FORMAT)
 
                 if msg == self.DISCONNECT_MSG:
                     connected = False
@@ -66,7 +66,7 @@ class NetworkServer:
 
         conn.close()
 
-    def start(self):
+    def start(self) -> None:
         logger.info("[STARTING] Server is starting")
         logger.info(f"[LISTENING] Server is listening on {self.SERVER}")
 
@@ -78,7 +78,7 @@ class NetworkServer:
             thread.start()
             logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
-    def broadcast(self, msg: str, sender_conn: socket.socket | None = None):
+    def broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
         """
         Send message to every connected client
         """
@@ -95,7 +95,7 @@ class NetworkServer:
                 except Exception as e:
                     logger.error(f"Error while broadcasting to: {client}\n\nError: {e}")
 
-    def start_game(self):
+    def start_game(self) -> None:
         logger.info("[SERVER] The game is starting!")
         payload = build_start_payload()
         self.broadcast(payload)

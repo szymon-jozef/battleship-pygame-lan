@@ -13,7 +13,7 @@ class NetworkClient:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect(self.ADDR)
 
-    def send(self, msg: str):
+    def send(self, msg: str) -> None:
         message = msg.encode(self.FORMAT)
         msg_length = len(message)
         send_length = str(msg_length).encode(self.FORMAT)
