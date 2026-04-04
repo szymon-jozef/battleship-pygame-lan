@@ -10,7 +10,6 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "pygame>=2.6.1",
-    "ruff>=0.15.9",
 ]
 
 [project.scripts]
@@ -28,24 +27,26 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "B", "UP", "SIM", "ANN"]
 
 [tool.mypy]
 python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true  
+disallow_untyped_defs = true
 check_untyped_defs = true
-files = "src"                 
+files = "src"
 
 [[tool.mypy.overrides]]
 module = "pygame.*"
+module = "pytest.*"
 ignore_missing_imports = true 
 
 [dependency-groups]
 dev = [
     "mypy>=1.20.0",
     "pytest>=9.0.2",
+    "ruff>=0.15.9",
 ]
 
 [tool.pytest.ini_options]
