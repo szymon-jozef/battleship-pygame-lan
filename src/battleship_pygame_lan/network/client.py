@@ -1,9 +1,13 @@
+import json
 import socket
 from logging import getLogger
+from queue import Queue
+from threading import Thread
 
 from battleship_pygame_lan.logic import ShotResult
 
 from .payloads import (
+    PayloadTypes,
     build_attack_payload,
     build_end_payload,
     build_ready_payload,
@@ -21,9 +25,19 @@ class NetworkClient:
         self.FORMAT = "utf-8"
         self.DISCONNECT_MSG = "!DISCONNET"
         self.ADDR = (self.SERVER, self.PORT)
+        self.message_queue: Queue = Queue()
+        self.connected: bool = False
 
+    def connect(self) -> None:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect(self.ADDR)
+        self.connected = True
+
+        receive_thread: Thread = Thread(target=self.receive, daemon=True)
+        receive_thread.start()
+
+    def disconnect(self) -> None:
+        self.send(self.DISCONNECT_MSG)
 
     def send(self, msg: str) -> None:
         try:
@@ -36,8 +50,39 @@ class NetworkClient:
         except OSError as e:
             logger.error(f"[Client] Error while sending the message: {e}")
 
-    def disconnect(self) -> None:
-        self.send(self.DISCONNECT_MSG)
+    def receive(self) -> None:
+        while self.connected:
+            try:
+                header: bytes = self.client.recv(self.HEADER)
+
+                if not header:
+                    logger.info("[Client] Connection closed by the server.")
+                    self.connected = False
+                    break
+
+                msg_length_str: str = header.decode(self.FORMAT).strip()
+                if msg_length_str:
+                    msg_len: int = int(msg_length_str)
+                    msg: str = self.client.recv(msg_len).decode(self.FORMAT)
+
+                    logger.info("[Client] Got new message!")
+                    logger.debug(f"[Client] Message: {msg}")
+
+                    try:
+                        payload_data: dict = json.loads(msg)
+                        payload_type = payload_data.get("type")
+
+                        match payload_type:
+                            case PayloadTypes.ATTACK.value as v:
+                                self.message_queue.put((v, payload_data))
+                            case _:
+                                pass
+                    except json.JSONDecodeError:
+                        logger.error("[Client] got weird json")
+            except OSError as e:
+                logger.error(f"[Client] Connection error in receive: {e}")
+                self.connected = False
+                break
 
     def ready(self, name: str) -> None:
         self.send(build_ready_payload(name))
@@ -50,8 +95,3 @@ class NetworkClient:
 
     def end(self) -> None:
         self.send(build_end_payload())
-
-
-if __name__ == "__main__":
-    client = NetworkClient()
-    client.send("Hello world!")
