@@ -1,7 +1,12 @@
 import json
+import socket
+from collections.abc import Generator
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from battleship_pygame_lan.logic import ShotResult
-from battleship_pygame_lan.network import payloads
+from battleship_pygame_lan.network import NetworkClient, payloads
 
 
 def test_building_payloads_attack() -> None:
@@ -62,3 +67,30 @@ def test_building_payloads_game_over() -> None:
         "over": True,
     }
     assert game_over_dict == expected_game_over
+
+
+@pytest.fixture
+def mock_socket() -> Generator:
+    with patch("socket.socket") as mock_mock:
+        yield mock_mock.return_value
+
+
+@pytest.fixture
+def client(mock_socket: socket.socket) -> NetworkClient:
+    return NetworkClient()
+
+
+def test_client_send_success(client: NetworkClient, mock_socket: MagicMock) -> None:
+    test_msg = "test_msg"
+    client.send(test_msg)
+
+    encoded_msg: bytes = test_msg.encode("utf-8")
+    expected_header_len: bytes = str(len(encoded_msg)).encode("utf-8")
+    expected_header: bytes = expected_header_len + b" " * (
+        64 - len(expected_header_len)
+    )
+
+    assert mock_socket.sendall.call_count == 2
+
+    mock_socket.sendall.assert_any_call(expected_header)
+    mock_socket.sendall.assert_any_call(encoded_msg)
