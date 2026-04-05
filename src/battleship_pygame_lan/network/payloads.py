@@ -33,6 +33,8 @@ Represented by PayloadTypes.GAME_OVER
 
 """
 
+# TODO! Some kind of enum GameState is needed! It will need to be sent by the server
+
 
 class PayloadTypes(StrEnum):
     """
