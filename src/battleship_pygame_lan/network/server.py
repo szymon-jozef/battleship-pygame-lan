@@ -3,21 +3,17 @@ import logging
 import socket
 import threading
 
+from .network_core import NetworkCore
 from .payloads import PayloadTypes, build_start_payload
 
 logger = logging.getLogger(__name__)
 
 
-class NetworkServer:
+class NetworkServer(NetworkCore):
     def __init__(
         self, server_ip: str = socket.gethostbyname(socket.gethostname())
     ) -> None:
-        self.SERVER = server_ip
-        self.HEADER = 64
-        self.PORT = 6769
-        self.FORMAT = "utf-8"
-        self.ADDR = (self.SERVER, self.PORT)
-
+        super().__init__(ip_address=server_ip)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clients: list[socket.socket] = []
         self.ready_players: set[str] = set()
@@ -74,7 +70,7 @@ class NetworkServer:
 
     def start(self) -> None:
         logger.info("[STARTING] Server is starting")
-        logger.info(f"[LISTENING] Server is listening on {self.SERVER}")
+        logger.info(f"[LISTENING] Server is listening on {self.HOST}")
 
         self.server.bind(self.ADDR)
         self.server.listen()
@@ -88,16 +84,10 @@ class NetworkServer:
         """
         Send message to every connected client
         """
-        message = msg.encode(self.FORMAT)
-        msg_length = len(message)
-        send_length = str(msg_length).encode(self.FORMAT)
-        send_length += b" " * (self.HEADER - len(send_length))
-
         for client in self.clients:
             if client != sender_conn:
                 try:
-                    client.send(send_length)
-                    client.send(message)
+                    self.send_to_socket(client, msg)
                 except Exception as e:
                     logger.error(f"Error while broadcasting to: {client}\n\nError: {e}")
 

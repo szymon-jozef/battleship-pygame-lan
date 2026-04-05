@@ -6,6 +6,7 @@ from threading import Thread
 
 from battleship_pygame_lan.logic import ShotResult
 
+from .network_core import NetworkCore
 from .payloads import (
     PayloadTypes,
     build_attack_payload,
@@ -18,23 +19,17 @@ from .payloads import (
 logger = getLogger(__name__)
 
 
-class NetworkClient:
+class NetworkClient(NetworkCore):
     def __init__(
         self,
         player_name: str,
         server_ip: str = socket.gethostbyname(socket.gethostname()),
     ) -> None:
-        self.SERVER: str = server_ip
-        # TODO!
-        # stuff like this should be the same for client and server.
-        # it would be better to move this to config file or something
-        self.HEADER = 64
-        self.PORT = 6769
-        self.FORMAT = "utf-8"
-        self.ADDR = (self.SERVER, self.PORT)
+        super().__init__(ip_address=server_ip)
+
+        self.player_name: str = player_name
         self.message_queue: Queue = Queue()
         self.connected: bool = False
-        self.player_name: str = player_name
 
     def connect(self) -> None:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,15 +45,7 @@ class NetworkClient:
         self.client.close()
 
     def send(self, msg: str) -> None:
-        try:
-            message = msg.encode(self.FORMAT)
-            msg_length = len(message)
-            send_length = str(msg_length).encode(self.FORMAT)
-            send_length += b" " * (self.HEADER - len(send_length))
-            self.client.sendall(send_length)
-            self.client.sendall(message)
-        except OSError as e:
-            logger.error(f"[Client] Error while sending the message: {e}")
+        self.send_to_socket(self.client, msg)
 
     def receive(self) -> None:
         while self.connected:

@@ -85,10 +85,10 @@ def test_client_send_success(client: NetworkClient, mock_socket: MagicMock) -> N
     client.connect()
     client.send(test_msg)
 
-    encoded_msg: bytes = test_msg.encode("utf-8")
+    encoded_msg: bytes = test_msg.encode(client.FORMAT)
     expected_header_len: bytes = str(len(encoded_msg)).encode("utf-8")
     expected_header: bytes = expected_header_len + b" " * (
-        64 - len(expected_header_len)
+        client.HEADER - len(expected_header_len)
     )
 
     assert mock_socket.sendall.call_count == 2
