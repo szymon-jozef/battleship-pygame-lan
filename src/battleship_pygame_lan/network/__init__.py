@@ -16,4 +16,5 @@ __all__ = [
     "build_end_payload",
     "build_ready_payload",
     "build_shot_result_payload",
+    "build_connection_status_payload",
 ]

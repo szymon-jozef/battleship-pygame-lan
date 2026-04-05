@@ -9,12 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkServer:
-    def __init__(self) -> None:
-        self.SERVER = socket.gethostbyname(socket.gethostname())
+    def __init__(
+        self, server_ip: str = socket.gethostbyname(socket.gethostname())
+    ) -> None:
+        self.SERVER = server_ip
         self.HEADER = 64
-        self.PORT = 6969
+        self.PORT = 6769
         self.FORMAT = "utf-8"
-        self.DISCONNECT_MSG = "!DISCONNET"
         self.ADDR = (self.SERVER, self.PORT)
 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,10 +33,6 @@ class NetworkServer:
                 msg_length: int = int(msg_length_str)
                 msg: str = conn.recv(msg_length).decode(self.FORMAT)
 
-                if msg == self.DISCONNECT_MSG:
-                    connected = False
-                    continue
-
                 logger.info(f"[{addr}] {msg}")
 
                 try:
@@ -44,6 +41,15 @@ class NetworkServer:
 
                     # TODO! handle other payload types
                     match payload_type:
+                        case PayloadTypes.CONNECTION_STATUS.value:
+                            player_name = payload_data.get("player_name")
+                            logger.info(
+                                f"[Server] Player {player_name} wanted to disconnect"
+                            )
+                            if player_name in self.ready_players:
+                                self.ready_players.remove(player_name)
+                            connected = False
+                            break
                         case (
                             PayloadTypes.READY.value
                         ):  # TODO! test this behaviour in tests

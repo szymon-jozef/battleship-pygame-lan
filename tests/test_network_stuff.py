@@ -77,7 +77,7 @@ def mock_socket() -> Generator:
 
 @pytest.fixture
 def client(mock_socket: socket.socket) -> NetworkClient:
-    return NetworkClient()
+    return NetworkClient("morbius")
 
 
 def test_client_send_success(client: NetworkClient, mock_socket: MagicMock) -> None:

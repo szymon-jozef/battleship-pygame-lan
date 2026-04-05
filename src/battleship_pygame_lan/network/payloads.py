@@ -18,6 +18,16 @@ This is represented by PayloadTypes.ATTACK and PayloadTypes.SHOT_RESULT
 - I placed all my ships, please note that I'm ready
 - Okay!
 
+I forgot about some of the most important stuff!
+
+- Hey, I'm a player that wants to do ship stuff, my name is morbius
+- Okay I have you on my list
+
+and
+
+- Hey, me morbius is tired of morbing for now, please disconnect
+- Bye!!!
+
 Represented by PayloadTypes.READY
 
 - I lost all my ships, please end the game!
@@ -41,6 +51,7 @@ class PayloadTypes(StrEnum):
     Enum representing types a payload can send
 
     Values:
+        CONNECTION_STATUS
         ATTACK
         SHOT_RESULT
         READY
@@ -49,12 +60,26 @@ class PayloadTypes(StrEnum):
         GAME_OVER
     """
 
+    CONNECTION_STATUS = "connection_status"
     ATTACK = "attack"
     SHOT_RESULT = "shot_result"
     READY = "ready"
     START = "start"
     END = "end"
     GAME_OVER = "game_over"
+
+
+def build_connection_status_payload(player_name: str, connect: bool) -> str:
+    """
+    Payload player sends to the server, when he wants to change connection status
+    """
+    return dumps(
+        {
+            "type": PayloadTypes.CONNECTION_STATUS,
+            "player_name": player_name,
+            "status": connect,
+        }
+    )
 
 
 def build_attack_payload(row: int, column: int) -> str:
