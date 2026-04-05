@@ -39,6 +39,14 @@ Represented by PayloadTypes.GAME_OVER
 class PayloadTypes(StrEnum):
     """
     Enum representing types a payload can send
+
+    Values:
+        ATTACK
+        SHOT_RESULT
+        READY
+        START
+        END
+        GAME_OVER
     """
 
     ATTACK = "attack"
