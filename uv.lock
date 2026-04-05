@@ -8,25 +8,23 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "pygame" },
-    { name = "ruff" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
     { name = "pytest" },
+    { name = "ruff" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "pygame", specifier = ">=2.6.1" },
-    { name = "ruff", specifier = ">=0.15.9" },
-]
+requires-dist = [{ name = "pygame", specifier = ">=2.6.1" }]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=1.20.0" },
     { name = "pytest", specifier = ">=9.0.2" },
+    { name = "ruff", specifier = ">=0.15.9" },
 ]
 
 [[package]]
