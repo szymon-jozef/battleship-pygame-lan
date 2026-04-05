@@ -2,11 +2,20 @@ import json
 import logging
 import socket
 import threading
+from dataclasses import dataclass
 
 from .network_core import NetworkCore
 from .payloads import PayloadTypes, build_start_payload
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Player:
+    conn: socket.socket
+    addr: tuple[str, int]
+    player_name: str | None = None
+    ready_status: bool = False
 
 
 class NetworkServer(NetworkCore):
@@ -15,58 +24,70 @@ class NetworkServer(NetworkCore):
     ) -> None:
         super().__init__(ip_address=server_ip)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clients: list[socket.socket] = []
-        self.ready_players: set[str] = set()
+        self.players: list[Player] = []
 
     def handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         logger.info(f"[NEW CONNECTION] {addr} connected")
-        self.clients.append(conn)
+        current_player = Player(conn=conn, addr=addr)
+        self.players.append(current_player)
 
         connected: bool = True
         while connected:
-            msg_length_str: str = conn.recv(self.HEADER).decode(self.FORMAT).strip()
-            if msg_length_str:
-                msg_length: int = int(msg_length_str)
-                msg: str = conn.recv(msg_length).decode(self.FORMAT)
+            try:
+                msg_length_str: str = conn.recv(self.HEADER).decode(self.FORMAT).strip()
+                if msg_length_str:
+                    msg_length: int = int(msg_length_str)
+                    msg: str = conn.recv(msg_length).decode(self.FORMAT)
 
-                logger.info(f"[{addr}] {msg}")
+                    logger.info(f"[{addr}] {msg}")
 
-                try:
-                    payload_data = json.loads(msg)
-                    payload_type = payload_data.get("type")
+                    try:
+                        payload_data = json.loads(msg)
+                        payload_type = payload_data.get("type")
 
-                    # TODO! handle other payload types
-                    match payload_type:
-                        case PayloadTypes.CONNECTION_STATUS.value:
-                            player_name = payload_data.get("player_name")
-                            logger.info(
-                                f"[Server] Player {player_name} wanted to disconnect"
-                            )
-                            if player_name in self.ready_players:
-                                self.ready_players.remove(player_name)
-                            connected = False
-                            break
-                        case (
-                            PayloadTypes.READY.value
-                        ):  # TODO! test this behaviour in tests
-                            player_name = payload_data.get("player_name")
-                            self.ready_players.add(player_name)
+                        # TODO! handle other payload types
+                        match payload_type:
+                            case PayloadTypes.CONNECTION_STATUS.value:
+                                if not bool(payload_data.get("status")):
+                                    logger.info(
+                                        f"[Server] Player {current_player.player_name} "
+                                        "wanted to disconnect"
+                                    )
+                                    if current_player in self.players:
+                                        self.players.remove(current_player)
+                                    connected = False
+                                    break
+                            case (
+                                PayloadTypes.READY.value
+                            ):  # TODO! test this behaviour in tests
+                                current_player.player_name = payload_data.get(
+                                    "player_name"
+                                )
+                                current_player.ready_status = True
 
-                            logger.info(
-                                f"[Server] Player {player_name} is ready! "
-                                f"({len(self.ready_players)}/2)"
-                            )
+                                ready_count = sum(
+                                    1 for c in self.players if c.ready_status
+                                )
 
-                            if len(self.ready_players) == 2:
-                                self.start_game()
-                        case _:
-                            pass
-                except json.JSONDecodeError:
-                    logger.error(f"[Server] Weird json from: {addr}")
-        if conn in self.clients:
-            self.clients.remove(conn)
+                                logger.info(
+                                    f"[Server] Player {current_player.player_name} is "
+                                    f"ready! ({ready_count}/2)"
+                                )
+
+                                if len(self.players) == 2:
+                                    self.start_game()
+                            case _:
+                                pass
+                    except json.JSONDecodeError:
+                        logger.error(f"[Server] Weird json from: {addr}")
+            except OSError:
+                logger.error(f"[Server] Critical error from: {addr}")
+                break
+        if current_player in self.players:
+            self.players.remove(current_player)
 
         conn.close()
+        logger.info(f"[Server] {addr} disconnected.")
 
     def start(self) -> None:
         logger.info("[STARTING] Server is starting")
@@ -84,12 +105,14 @@ class NetworkServer(NetworkCore):
         """
         Send message to every connected client
         """
-        for client in self.clients:
-            if client != sender_conn:
+        for player in self.players:
+            if player.conn != sender_conn:
                 try:
-                    self.send_to_socket(client, msg)
+                    self.send_to_socket(player.conn, msg)
                 except Exception as e:
-                    logger.error(f"Error while broadcasting to: {client}\n\nError: {e}")
+                    logger.error(
+                        f"Error while broadcasting to: {player.conn}\n\nError: {e}"
+                    )
 
     def start_game(self) -> None:
         logger.info("[SERVER] The game is starting!")
