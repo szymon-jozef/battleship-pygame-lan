@@ -93,14 +93,24 @@ def build_connection_status_payload(player_name: str, connect: bool) -> str:
     )
 
 
-def build_attack_payload(row: int, column: int) -> str:
+def build_attack_payload(row: int, column: int, sender: str, receiver: str) -> str:
     """
     Payload player sends to the oponent, saying which place he wants to attack
     """
-    return dumps({"type": PayloadTypes.ATTACK, "row": row, "column": column})
+    return dumps(
+        {
+            "type": PayloadTypes.ATTACK,
+            "row": row,
+            "column": column,
+            "sender": sender,
+            "receiver": receiver,
+        }
+    )
 
 
-def build_shot_result_payload(row: int, column: int, result: ShotResult) -> str:
+def build_shot_result_payload(
+    row: int, column: int, result: ShotResult, sender: str, receiver: str
+) -> str:
     """
     Payload player sends to the oponent, saying if the oponent hit any ship
     """
@@ -110,6 +120,8 @@ def build_shot_result_payload(row: int, column: int, result: ShotResult) -> str:
             "row": row,
             "column": column,
             "result": result.name,
+            "sender": sender,
+            "receiver": receiver,
         }
     )
 
@@ -130,11 +142,11 @@ def build_start_payload(start: bool = True) -> str:
     return dumps({"type": PayloadTypes.START, "start": start})
 
 
-def build_end_payload(end: bool = True) -> str:
+def build_end_payload(player_name: str, end: bool = True) -> str:
     """
     Payload player sends to the server, saying he lost all ships
     """
-    return dumps({"type": PayloadTypes.END, "end": end})
+    return dumps({"type": PayloadTypes.END, "end": end, "player_name": player_name})
 
 
 def build_game_over_payload(over: bool = True) -> str:
