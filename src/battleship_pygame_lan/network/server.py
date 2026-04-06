@@ -3,6 +3,8 @@ import logging
 import socket
 import threading
 
+from battleship_pygame_lan.logic import ShotResult
+
 from .models import GameState, NetworkPlayer, PayloadTypes
 from .network_core import NetworkCore
 from .payloads import (
@@ -140,13 +142,14 @@ class NetworkServer(NetworkCore):
                             if not bool(payload_data.get("status")):
                                 break
                         case PayloadTypes.READY.value:
+                            player_name = payload_data.get("player_name")
+                            if player_name:
+                                current_player.player_name = str(player_name)
                             self._handle_player_ready(current_player)
                         case PayloadTypes.ATTACK.value:
-                            # TODO some kind of routing
-                            pass
+                            self._handle_attack(payload_data, msg)
                         case PayloadTypes.SHOT_RESULT.value:
-                            # same as above
-                            pass
+                            self._handle_shot_result(payload_data, msg)
                         case _:
                             pass
 
@@ -156,6 +159,36 @@ class NetworkServer(NetworkCore):
                 logger.error(f"[Server] Critical error from: {addr}")
                 break
         self._handle_player_cleanup(current_player)
+
+    def _handle_attack(self, payload_data: dict, msg: str) -> None:
+        receiver: str | None = payload_data.get("receiver")
+        sender: str | None = payload_data.get("sender")
+        if receiver:
+            self.route(msg, receiver)
+        logger.info(f"[Server] {sender} attacked {receiver}!")
+
+    def _handle_shot_result(self, payload_data: dict, msg: str) -> None:
+        attacker: str | None = payload_data.get("receiver")
+        result_raw: str | None = payload_data.get("result")
+        if not isinstance(result_raw, str):
+            logger.error(f"[Server] Invliad or missing shot result: {result_raw}")
+
+        if result_raw:
+            shot_result: ShotResult = ShotResult[result_raw]
+
+        if (
+            self.current_turn is not None
+            and self.current_turn.player_name == attacker
+            and attacker
+            and self.current_game_state == GameState.WAR
+            and shot_result != ShotResult.AlreadyShot
+        ):
+            self.route(msg, attacker)
+            self._switch_turn()
+            logger.info(
+                f"[Server] {attacker} attack info was sent back to "
+                "him. Changing turn..."
+            )
 
     def _handle_player_cleanup(self, player: NetworkPlayer) -> None:
         with self.players_lock:
@@ -182,6 +215,7 @@ class NetworkServer(NetworkCore):
 
         if ready_count == self.MAX_PLAYERS:
             self.start_game()
+            self._switch_turn()
 
     def _switch_turn(self) -> None:
         """
