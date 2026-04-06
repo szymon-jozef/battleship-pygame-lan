@@ -60,14 +60,14 @@ class PayloadTypes(StrEnum):
     Enum representing types a payload can send
 
     Values:
-        CONNECTION_STATUS
-        ATTACK
-        SHOT_RESULT
-        READY
-        START
-        END
-        GAME_OVER
-        GAME_STATE
+        CONNECTION_STATUS -  current connection status (bool, True when connected)
+        ATTACK - used when you want to attack someone
+        SHOT_RESULT - used when you were attacked
+        READY - used to signal that you're ready to play
+        START - used by the server to say that the game is about to start
+        END - used when you lost all ships
+        GAME_OVER - used by the server to say someone has lost
+        GAME_STATE - used by the server to indicate current game state
     """
 
     CONNECTION_STATUS = "connection_status"

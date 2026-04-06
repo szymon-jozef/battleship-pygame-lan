@@ -71,7 +71,6 @@ class NetworkClient(NetworkCore):
                         payload_data: dict = json.loads(msg)
                         payload_type = payload_data.get("type")
 
-                        # TODO handle other payload types
                         match payload_type:
                             case PayloadTypes.CONNECTION_STATUS.value:
                                 if not bool(payload_data.get("status")):
@@ -81,15 +80,20 @@ class NetworkClient(NetworkCore):
                                     )
                                     self.connected = False
                                     break
-                            case PayloadTypes.ATTACK.value:
-                                self.message_queue.put(payload_data)
                             case PayloadTypes.GAME_STATE.value:
                                 state = payload_data.get("state")
                                 self.current_game_state = (
                                     GameState[state] if state else None
                                 )
+                            case _ if payload_type in [
+                                e.value for e in PayloadTypes
+                            ]:  # we put every other PayloadType on the queue
+                                self.message_queue.put(payload_data)
                             case _:
-                                pass
+                                # and ignore everything else
+                                logger.error(
+                                    f"[Client] Unrecognized data: {payload_data}"
+                                )
                     except json.JSONDecodeError:
                         logger.error("[Client] got weird json")
             except OSError as e:
