@@ -4,7 +4,8 @@ import sys
 
 import pygame
 
-from battleship_pygame_lan.gui import BoardRenderer, MainMenu
+from battleship_pygame_lan.gui.board_render import BoardRenderer
+from battleship_pygame_lan.gui.main_menu import MainMenu
 from battleship_pygame_lan.logic import Player
 from battleship_pygame_lan.logic.enums import ShipType
 
