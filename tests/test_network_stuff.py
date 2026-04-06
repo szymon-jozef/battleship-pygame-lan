@@ -6,7 +6,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from battleship_pygame_lan.logic import ShotResult
-from battleship_pygame_lan.network import NetworkClient, NetworkServer, Player, payloads
+from battleship_pygame_lan.network import (
+    GameState,
+    NetworkClient,
+    NetworkServer,
+    Player,
+    payloads,
+)
 
 
 # payloads
@@ -68,6 +74,14 @@ def test_building_payloads_game_over() -> None:
         "over": True,
     }
     assert game_over_dict == expected_game_over
+
+
+def test_building_payloads_game_state() -> None:
+    state: GameState = GameState.LOBBY
+    game_state_payload: str = payloads.build_game_state_payload(state)
+    game_state_dict = json.loads(game_state_payload)
+    expected_game_state = {"type": "game_state", "state": state.name}
+    assert game_state_dict == expected_game_state
 
 
 # client
