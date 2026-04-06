@@ -113,7 +113,7 @@ class NetworkServer(NetworkCore):
 
     def start(self) -> None:
         """
-        Method for starting the server. Needs to be run if you want to use the server!!!!
+        Method for starting the server. Needs to be run if you want to use the server!!!
         """
         logger.info("[STARTING] Server is starting")
         logger.info(f"[LISTENING] Server is listening on {self.HOST}")
