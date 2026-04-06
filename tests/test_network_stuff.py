@@ -180,3 +180,31 @@ def test_server_player_cleanup(mock_server: NetworkServer) -> None:
     mock_server._handle_player_cleanup(p1)
     assert len(mock_server.players) == 0
     p1.conn.close.assert_called_once()
+
+
+@patch.object(NetworkServer, "send_to_socket")
+def test_server_routing(
+    mock_send_to_socket: MagicMock, mock_server: NetworkServer
+) -> None:
+    p1_name = "morbius"
+    p2_name = "spider-mid"
+    p1 = Player(conn=MagicMock(), addr=("127.0.0.2", 5001), player_name=p1_name)
+    p2 = Player(conn=MagicMock(), addr=("127.0.0.2", 5002), player_name=p2_name)
+    mock_server.players.extend([p1, p2])
+    test_msg = "test-msg"
+    mock_server.route(test_msg, p2_name)
+
+    mock_send_to_socket.assert_called_once_with(p2.conn, test_msg)
+
+
+@patch.object(NetworkServer, "send_to_socket")
+def test_server_routing_player_not_found(
+    mock_send_to_socket: MagicMock, mock_server: NetworkServer
+) -> None:
+    p1_name = "morbius"
+    p1 = Player(conn=MagicMock(), addr=("127.0.0.2", 5001), player_name=p1_name)
+    mock_server.players.append(p1)
+
+    mock_server.route("test-msg", "doctor-weird")
+
+    mock_send_to_socket.assert_not_called()

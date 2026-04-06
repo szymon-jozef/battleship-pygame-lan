@@ -33,6 +33,7 @@ class NetworkServer(NetworkCore):
         self.players_lock = threading.Lock()
         self.players: list[Player] = []
         self.current_game_state: GameState | None = None
+        self.current_turn: Player | None = None
 
     def handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         with self.players_lock:
@@ -144,6 +145,23 @@ class NetworkServer(NetworkCore):
                 logger.error(
                     f"Error while broadcasting to: {player.conn}\n\nError: {e}"
                 )
+
+    def route(self, msg: str, receiver: str) -> None:
+        player_receiver: Player | None = None
+        with self.players_lock:
+            for player in self.players:
+                if player.player_name == receiver:
+                    player_receiver = player
+                    break
+        if player_receiver:
+            try:
+                self.send_to_socket(player_receiver.conn, msg)
+            except Exception as e:
+                logger.error(f"[Server] Error while routing to {receiver}: {e}")
+        else:
+            logger.warning(
+                f"[Server] Could not route the message. Receiver {receiver} not found"
+            )
 
     def start_game(self) -> None:
         logger.info("[SERVER] The game is starting!")
