@@ -2,25 +2,15 @@ import json
 import logging
 import socket
 import threading
-from dataclasses import dataclass
 
+from .models import GameState, NetworkPlayer, PayloadTypes
 from .network_core import NetworkCore
 from .payloads import (
-    GameState,
-    PayloadTypes,
     build_game_state_payload,
     build_start_payload,
 )
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class Player:
-    conn: socket.socket
-    addr: tuple[str, int]
-    player_name: str | None = None
-    ready_status: bool = False
 
 
 class NetworkServer(NetworkCore):
@@ -31,9 +21,9 @@ class NetworkServer(NetworkCore):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.MAX_PLAYERS: int = 2
         self.players_lock = threading.Lock()
-        self.players: list[Player] = []
+        self.players: list[NetworkPlayer] = []
         self.current_game_state: GameState | None = None
-        self.current_turn: Player | None = None
+        self.current_turn: NetworkPlayer | None = None
 
     def _handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         """
@@ -49,7 +39,7 @@ class NetworkServer(NetworkCore):
                 return
 
         logger.info(f"[NEW CONNECTION] {addr} connected")
-        current_player = Player(conn=conn, addr=addr)
+        current_player = NetworkPlayer(conn=conn, addr=addr)
         self.players.append(current_player)
 
         connected: bool = True
@@ -95,14 +85,14 @@ class NetworkServer(NetworkCore):
                 break
         self._handle_player_cleanup(current_player)
 
-    def _handle_player_cleanup(self, player: Player) -> None:
+    def _handle_player_cleanup(self, player: NetworkPlayer) -> None:
         with self.players_lock:
             if player in self.players:
                 self.players.remove(player)
         player.conn.close()
         logger.info(f"[Server] {player.addr} disconnected and cleaned up")
 
-    def _handle_player_ready(self, current_player: Player) -> None:
+    def _handle_player_ready(self, current_player: NetworkPlayer) -> None:
         """
         Private method used when every player is ready for the game
         """
@@ -142,7 +132,7 @@ class NetworkServer(NetworkCore):
         """
         Send message to every connected client
         """
-        players_copy: list[Player] = []
+        players_copy: list[NetworkPlayer] = []
         with self.players_lock:
             players_copy = [
                 player for player in self.players if player.conn != sender_conn
@@ -171,7 +161,7 @@ class NetworkServer(NetworkCore):
         """
         Route the message to receiver
         """
-        player_receiver: Player | None = None
+        player_receiver: NetworkPlayer | None = None
         with self.players_lock:
             for player in self.players:
                 if player.player_name == receiver:

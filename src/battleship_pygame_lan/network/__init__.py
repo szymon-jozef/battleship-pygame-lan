@@ -1,4 +1,5 @@
 from .client import NetworkClient
+from .models import NetworkPlayer
 from .payloads import (
     GameState,
     PayloadTypes,
@@ -7,7 +8,7 @@ from .payloads import (
     build_ready_payload,
     build_shot_result_payload,
 )
-from .server import NetworkServer, Player
+from .server import NetworkServer
 
 __all__ = [
     "NetworkServer",
@@ -18,6 +19,6 @@ __all__ = [
     "build_ready_payload",
     "build_shot_result_payload",
     "build_connection_status_payload",
-    "Player",
+    "NetworkPlayer",
     "GameState",
 ]

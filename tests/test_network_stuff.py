@@ -9,8 +9,8 @@ from battleship_pygame_lan.logic import ShotResult
 from battleship_pygame_lan.network import (
     GameState,
     NetworkClient,
+    NetworkPlayer,
     NetworkServer,
-    Player,
     payloads,
 )
 
@@ -144,14 +144,14 @@ def test_server_initialization(mock_server: NetworkServer) -> None:
 
 def test_server_reject_conn_full(mock_server: NetworkServer) -> None:
     mock_server.players = [
-        Player(conn=MagicMock(), addr=("127.0.0.2", 5001)),
-        Player(conn=MagicMock(), addr=("127.0.0.2", 5002)),
+        NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5001)),
+        NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5002)),
     ]
 
     new_conn = MagicMock()
     new_addr = ("127.0.0.1", 5003)
 
-    mock_server.handle_client(new_conn, new_addr)
+    mock_server._handle_client(new_conn, new_addr)
 
     new_conn.close.assert_called_once()
     assert len(mock_server.players) == 2
@@ -161,9 +161,9 @@ def test_server_reject_conn_full(mock_server: NetworkServer) -> None:
 def test_server_broadcast(
     mock_send_to_socket: MagicMock, mock_server: NetworkServer
 ) -> None:
-    p1 = Player(conn=MagicMock(), addr=("127.0.0.2", 5001))
-    p2 = Player(conn=MagicMock(), addr=("127.0.0.2", 5002))
-    p3 = Player(conn=MagicMock(), addr=("127.0.0.2", 5003))
+    p1 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5001))
+    p2 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5002))
+    p3 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5003))
     mock_server.players.extend([p1, p2, p3])
 
     test_msg = '{"type": "start"}'
@@ -175,7 +175,7 @@ def test_server_broadcast(
 
 
 def test_server_player_cleanup(mock_server: NetworkServer) -> None:
-    p1 = Player(conn=MagicMock(), addr=("127.0.0.2", 5001))
+    p1 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5001))
     mock_server.players.append(p1)
     mock_server._handle_player_cleanup(p1)
     assert len(mock_server.players) == 0
@@ -188,8 +188,8 @@ def test_server_routing(
 ) -> None:
     p1_name = "morbius"
     p2_name = "spider-mid"
-    p1 = Player(conn=MagicMock(), addr=("127.0.0.2", 5001), player_name=p1_name)
-    p2 = Player(conn=MagicMock(), addr=("127.0.0.2", 5002), player_name=p2_name)
+    p1 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5001), player_name=p1_name)
+    p2 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5002), player_name=p2_name)
     mock_server.players.extend([p1, p2])
     test_msg = "test-msg"
     mock_server.route(test_msg, p2_name)
@@ -202,7 +202,7 @@ def test_server_routing_player_not_found(
     mock_send_to_socket: MagicMock, mock_server: NetworkServer
 ) -> None:
     p1_name = "morbius"
-    p1 = Player(conn=MagicMock(), addr=("127.0.0.2", 5001), player_name=p1_name)
+    p1 = NetworkPlayer(conn=MagicMock(), addr=("127.0.0.2", 5001), player_name=p1_name)
     mock_server.players.append(p1)
 
     mock_server.route("test-msg", "doctor-weird")
