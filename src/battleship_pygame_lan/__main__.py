@@ -1,6 +1,7 @@
 import logging
 
 from battleship_pygame_lan.logic import Player, ShipType
+from battleship_pygame_lan.network import NetworkServer
 
 
 def main() -> None:
@@ -9,6 +10,10 @@ def main() -> None:
     logger.info("Started")
 
     # dirty code showcase
+
+    # network
+    server = NetworkServer()
+    server.start()
 
     # create player
     player1 = Player("Morbius")
