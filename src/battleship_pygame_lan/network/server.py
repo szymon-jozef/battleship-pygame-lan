@@ -25,6 +25,78 @@ class NetworkServer(NetworkCore):
         self.current_game_state: GameState | None = None
         self.current_turn: NetworkPlayer | None = None
 
+    def start(self) -> None:
+        """
+        Method for starting the server. Needs to be run if you want to use the server!!!
+        """
+        logger.info("[STARTING] Server is starting")
+        logger.info(f"[LISTENING] Server is listening on {self.HOST}")
+
+        self.server.bind(self.ADDR)
+        self.server.listen()
+        while True:
+            conn, addr = self.server.accept()
+            thread = threading.Thread(
+                target=self._handle_client, args=(conn, addr), daemon=True
+            )
+            thread.start()
+            logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+
+    def broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
+        """
+        Send message to every connected client
+        """
+        players_copy: list[NetworkPlayer] = []
+        with self.players_lock:
+            players_copy = [
+                player for player in self.players if player.conn != sender_conn
+            ]
+
+        for player in players_copy:
+            try:
+                self.send_to_socket(player.conn, msg)
+            except Exception as e:
+                logger.error(
+                    f"Error while broadcasting to: {player.conn}\n\nError: {e}"
+                )
+
+    def route(self, msg: str, receiver: str) -> None:
+        """
+        Route the message to receiver
+        """
+        player_receiver: NetworkPlayer | None = None
+        with self.players_lock:
+            for player in self.players:
+                if player.player_name == receiver:
+                    player_receiver = player
+                    break
+        if player_receiver:
+            try:
+                self.send_to_socket(player_receiver.conn, msg)
+            except Exception as e:
+                logger.error(f"[Server] Error while routing to {receiver}: {e}")
+        else:
+            logger.warning(
+                f"[Server] Could not route the message. Receiver {receiver} not found"
+            )
+
+    def start_game(self) -> None:
+        """
+        Method for handling the game start.
+        It broadcasts the game was started
+        """
+        logger.info("[SERVER] The game is starting!")
+        payload = build_start_payload()
+        self.broadcast(payload)
+
+    def change_game_state(self, game_state: GameState) -> None:
+        """
+        Broadcast game state to every player
+        """
+        logger.info(f"[Server] We're changing the game state to {game_state.value}")
+        payload = build_game_state_payload(game_state)
+        self.broadcast(payload)
+
     def _handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         """
         Private method for handling the client.
@@ -111,41 +183,6 @@ class NetworkServer(NetworkCore):
         if ready_count == self.MAX_PLAYERS:
             self.start_game()
 
-    def start(self) -> None:
-        """
-        Method for starting the server. Needs to be run if you want to use the server!!!
-        """
-        logger.info("[STARTING] Server is starting")
-        logger.info(f"[LISTENING] Server is listening on {self.HOST}")
-
-        self.server.bind(self.ADDR)
-        self.server.listen()
-        while True:
-            conn, addr = self.server.accept()
-            thread = threading.Thread(
-                target=self._handle_client, args=(conn, addr), daemon=True
-            )
-            thread.start()
-            logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
-
-    def broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
-        """
-        Send message to every connected client
-        """
-        players_copy: list[NetworkPlayer] = []
-        with self.players_lock:
-            players_copy = [
-                player for player in self.players if player.conn != sender_conn
-            ]
-
-        for player in players_copy:
-            try:
-                self.send_to_socket(player.conn, msg)
-            except Exception as e:
-                logger.error(
-                    f"Error while broadcasting to: {player.conn}\n\nError: {e}"
-                )
-
     def _switch_turn(self) -> None:
         """
         Private method for switching turn.
@@ -156,40 +193,3 @@ class NetworkServer(NetworkCore):
                 if player != self.current_turn:
                     self.current_turn = player
                     break
-
-    def route(self, msg: str, receiver: str) -> None:
-        """
-        Route the message to receiver
-        """
-        player_receiver: NetworkPlayer | None = None
-        with self.players_lock:
-            for player in self.players:
-                if player.player_name == receiver:
-                    player_receiver = player
-                    break
-        if player_receiver:
-            try:
-                self.send_to_socket(player_receiver.conn, msg)
-            except Exception as e:
-                logger.error(f"[Server] Error while routing to {receiver}: {e}")
-        else:
-            logger.warning(
-                f"[Server] Could not route the message. Receiver {receiver} not found"
-            )
-
-    def start_game(self) -> None:
-        """
-        Method for handling the game start.
-        It broadcasts the game was started
-        """
-        logger.info("[SERVER] The game is starting!")
-        payload = build_start_payload()
-        self.broadcast(payload)
-
-    def change_game_state(self, game_state: GameState) -> None:
-        """
-        Broadcast game state to every player
-        """
-        logger.info(f"[Server] We're changing the game state to {game_state.value}")
-        payload = build_game_state_payload(game_state)
-        self.broadcast(payload)
