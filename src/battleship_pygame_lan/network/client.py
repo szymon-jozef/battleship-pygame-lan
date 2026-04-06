@@ -104,11 +104,15 @@ class NetworkClient(NetworkCore):
     def ready(self, name: str) -> None:
         self.send(build_ready_payload(name))
 
-    def send_attack_info(self, row: int, column: int) -> None:
-        self.send(build_attack_payload(row, column))
+    def send_attack_info(
+        self, row: int, column: int, sender: str, receiver: str
+    ) -> None:
+        self.send(build_attack_payload(row, column, sender, receiver))
 
-    def send_shot_result(self, row: int, column: int, shot_result: ShotResult) -> None:
-        self.send(build_shot_result_payload(row, column, shot_result))
+    def send_shot_result(
+        self, row: int, column: int, shot_result: ShotResult, sender: str, receiver: str
+    ) -> None:
+        self.send(build_shot_result_payload(row, column, shot_result, sender, receiver))
 
-    def end(self) -> None:
-        self.send(build_end_payload())
+    def end(self, player_name: str) -> None:
+        self.send(build_end_payload(player_name))
