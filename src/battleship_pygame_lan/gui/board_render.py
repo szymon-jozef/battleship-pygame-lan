@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import pygame
 
 from ..logic.enums import FieldState
@@ -83,7 +81,7 @@ class BoardRenderer:
                 pygame.draw.rect(self.screen, (20, 40, 70), rect, 1)
 
     def get_clicked_cell(
-        self, pos: Tuple[int, int], ox: int, oy: int
-    ) -> Optional[Tuple[int, int]]:
+        self, pos: tuple[int, int], ox: int, oy: int
+    ) -> tuple[int, int] | None:
         col, row = (pos[0] - ox) // 42, (pos[1] - oy) // 42
         return (int(row), int(col)) if 0 <= row < 10 and 0 <= col < 10 else None

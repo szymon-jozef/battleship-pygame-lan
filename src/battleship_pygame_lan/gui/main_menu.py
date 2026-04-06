@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pygame
 
@@ -24,12 +24,12 @@ class MainMenu:
 
         # Assets & Animations
         self.bg_filenames = ["bg1.jpg", "bg2.jpg", "bg3.jpg"]
-        self.backgrounds: List[pygame.Surface] = []
-        self.play_bg: Optional[pygame.Surface] = None
-        self.click_sound: Optional[pygame.mixer.Sound] = None
-        self.play_sound: Optional[pygame.mixer.Sound] = None
-        self.hit_sound: Optional[pygame.mixer.Sound] = None
-        self.miss_sound: Optional[pygame.mixer.Sound] = None
+        self.backgrounds: list[pygame.Surface] = []
+        self.play_bg: pygame.Surface | None = None
+        self.click_sound: pygame.mixer.Sound | None = None
+        self.play_sound: pygame.mixer.Sound | None = None
+        self.hit_sound: pygame.mixer.Sound | None = None
+        self.miss_sound: pygame.mixer.Sound | None = None
         self.volume: float = 0.5
 
         self.load_assets()
@@ -154,7 +154,7 @@ class MainMenu:
         elif self.panel_y > target_y:
             self.panel_y = max(self.panel_y - self.slide_speed, target_y)
 
-    def handle_events(self, event: pygame.event.Event) -> Optional[str]:
+    def handle_events(self, event: pygame.event.Event) -> str | None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.menu_state == "SETTINGS" and self.slider_rect.collidepoint(
                 event.pos
@@ -242,7 +242,7 @@ class MainMenu:
                 self._draw_input_content("HOST IP:", self.host_ip, m_pos, off_y)
                 self._draw_buttons(self.join_buttons, m_pos, True, off_y)
 
-    def _draw_settings_view(self, m_pos: Tuple[int, int], off_y: int) -> None:
+    def _draw_settings_view(self, m_pos: tuple[int, int], off_y: int) -> None:
         self._draw_input_content("PLAYER NAME:", self.player_name, m_pos, off_y, 150)
         self.screen.blit(
             self.font_label.render("VOLUME:", True, WHITE),
@@ -256,7 +256,7 @@ class MainMenu:
         )
 
     def _draw_input_content(
-        self, lbl: str, val: str, m_pos: Tuple[int, int], off_y: int, top: int = 180
+        self, lbl: str, val: str, m_pos: tuple[int, int], off_y: int, top: int = 180
     ) -> None:
         self.screen.blit(
             self.font_label.render(lbl, True, WHITE),
@@ -273,8 +273,8 @@ class MainMenu:
 
     def _draw_buttons(
         self,
-        b_list: List[Dict[str, Any]],
-        m_pos: Tuple[int, int],
+        b_list: list[dict[str, Any]],
+        m_pos: tuple[int, int],
         center: bool = False,
         off_y: int = 0,
     ) -> None:
