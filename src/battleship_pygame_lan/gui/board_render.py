@@ -1,8 +1,9 @@
+from typing import Any
+
 import pygame
 
 from ..logic.enums import FieldState
 
-# Shared Constants
 WHITE = (255, 255, 255)
 SHIP_COLOR = (100, 100, 100)
 MISS_COLOR = (150, 150, 255)
@@ -20,19 +21,17 @@ class BoardRenderer:
             FieldState.Hit: (60, 20, 20),
         }
 
-    def draw(self, board: any, ox: int, oy: int, title: str) -> None:
+    def draw(self, board: Any, ox: int, oy: int, title: str) -> None:
         title_surf = pygame.font.SysFont("Arial", 24, bold=True).render(
             title, True, WHITE
         )
         self.screen.blit(title_surf, (ox, oy - 40))
 
         for r in range(board.row):
-            # Row Labels
             self.screen.blit(
                 self.font.render(str(r), True, WHITE), (ox - 25, oy + r * 42 + 10)
             )
             for c in range(board.column):
-                # Column Labels (only on first row)
                 if r == 0:
                     self.screen.blit(
                         self.font.render(str(c), True, WHITE),
@@ -43,14 +42,11 @@ class BoardRenderer:
                 state = board.get_field_state(r, c)
                 base_color = self.colors.get(state, (30, 30, 60))
 
-                # Draw cell background
                 pygame.draw.rect(self.screen, base_color, rect)
 
-                # Draw state-specific markers
                 if state == FieldState.Missed:
                     pygame.draw.circle(self.screen, MISS_COLOR, rect.center, 12, 2)
                     pygame.draw.circle(self.screen, MISS_COLOR, rect.center, 6, 1)
-
                 elif state == FieldState.Hit:
                     pygame.draw.line(
                         self.screen,
@@ -66,7 +62,6 @@ class BoardRenderer:
                         (rect.left + 5, rect.bottom - 5),
                         3,
                     )
-
                 elif state == FieldState.Empty:
                     highlight = tuple(min(255, v + 30) for v in base_color)
                     pygame.draw.line(
@@ -77,7 +72,6 @@ class BoardRenderer:
                         2,
                     )
 
-                # Cell Border
                 pygame.draw.rect(self.screen, (20, 40, 70), rect, 1)
 
     def get_clicked_cell(
