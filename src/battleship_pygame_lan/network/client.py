@@ -8,6 +8,7 @@ from battleship_pygame_lan.logic import ShotResult
 
 from .network_core import NetworkCore
 from .payloads import (
+    GameState,
     PayloadTypes,
     build_attack_payload,
     build_connection_status_payload,
@@ -30,6 +31,7 @@ class NetworkClient(NetworkCore):
         self.player_name: str = player_name
         self.message_queue: Queue = Queue()
         self.connected: bool = False
+        self.current_game_state: GameState | None = None
 
     def connect(self) -> None:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -69,6 +71,7 @@ class NetworkClient(NetworkCore):
                         payload_data: dict = json.loads(msg)
                         payload_type = payload_data.get("type")
 
+                        # TODO handle other payload types
                         match payload_type:
                             case PayloadTypes.CONNECTION_STATUS.value:
                                 if not bool(payload_data.get("status")):
@@ -80,6 +83,11 @@ class NetworkClient(NetworkCore):
                                     break
                             case PayloadTypes.ATTACK.value:
                                 self.message_queue.put(payload_data)
+                            case PayloadTypes.GAME_STATE.value:
+                                state = payload_data.get("state")
+                                self.current_game_state = (
+                                    GameState[state] if state else None
+                                )
                             case _:
                                 pass
                     except json.JSONDecodeError:

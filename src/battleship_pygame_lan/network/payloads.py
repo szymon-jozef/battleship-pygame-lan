@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum, StrEnum, auto
 from json import dumps
 
 from battleship_pygame_lan.logic import ShotResult
@@ -41,9 +41,18 @@ Represented by PayloadTypes.END
 
 Represented by PayloadTypes.GAME_OVER
 
+- Now we are doing this: <for example: placing ships>
+- Oki ^^
+
 """
 
-# TODO! Some kind of enum GameState is needed! It will need to be sent by the server
+
+# TODO this does not belong in here
+class GameState(Enum):
+    LOBBY = auto()
+    SHIP_PLACEMENT = auto()
+    WAR = auto()
+    FINISH = auto()
 
 
 class PayloadTypes(StrEnum):
@@ -58,6 +67,7 @@ class PayloadTypes(StrEnum):
         START
         END
         GAME_OVER
+        GAME_STATE
     """
 
     CONNECTION_STATUS = "connection_status"
@@ -67,6 +77,7 @@ class PayloadTypes(StrEnum):
     START = "start"
     END = "end"
     GAME_OVER = "game_over"
+    GAME_STATE = "game_state"
 
 
 def build_connection_status_payload(player_name: str, connect: bool) -> str:
@@ -131,3 +142,10 @@ def build_game_over_payload(over: bool = True) -> str:
     Payload server sends to the player, saying the game was has ended
     """
     return dumps({"type": PayloadTypes.GAME_OVER, "over": over})
+
+
+def build_game_state_payload(current_game_state: GameState) -> str:
+    """
+    Payload the server sends to the players, saying what game state are we in
+    """
+    return dumps({"type": PayloadTypes.GAME_STATE, "state": current_game_state.name})

@@ -5,7 +5,12 @@ import threading
 from dataclasses import dataclass
 
 from .network_core import NetworkCore
-from .payloads import PayloadTypes, build_start_payload
+from .payloads import (
+    GameState,
+    PayloadTypes,
+    build_game_state_payload,
+    build_start_payload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +32,7 @@ class NetworkServer(NetworkCore):
         self.MAX_PLAYERS: int = 2
         self.players_lock = threading.Lock()
         self.players: list[Player] = []
+        self.current_game_state: GameState | None = None
 
     def handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         with self.players_lock:
@@ -66,10 +72,14 @@ class NetworkServer(NetworkCore):
                         case PayloadTypes.CONNECTION_STATUS.value:
                             if not bool(payload_data.get("status")):
                                 break
-                        case (
-                            PayloadTypes.READY.value
-                        ):  # TODO! test this behaviour in tests
+                        case PayloadTypes.READY.value:
                             self._handle_player_ready(current_player)
+                        case PayloadTypes.ATTACK.value:
+                            # TODO some kind of routing
+                            pass
+                        case PayloadTypes.SHOT_RESULT.value:
+                            # same as above
+                            pass
                         case _:
                             pass
 
@@ -138,4 +148,9 @@ class NetworkServer(NetworkCore):
     def start_game(self) -> None:
         logger.info("[SERVER] The game is starting!")
         payload = build_start_payload()
+        self.broadcast(payload)
+
+    def change_game_state(self, game_state: GameState) -> None:
+        logger.info(f"[Server] We're changing the game state to {game_state.value}")
+        payload = build_game_state_payload(game_state)
         self.broadcast(payload)

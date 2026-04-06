@@ -1,5 +1,6 @@
 from .client import NetworkClient
 from .payloads import (
+    GameState,
     PayloadTypes,
     build_attack_payload,
     build_end_payload,
@@ -18,4 +19,5 @@ __all__ = [
     "build_shot_result_payload",
     "build_connection_status_payload",
     "Player",
+    "GameState",
 ]
