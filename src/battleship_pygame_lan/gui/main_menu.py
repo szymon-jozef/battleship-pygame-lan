@@ -169,26 +169,32 @@ class MainMenu:
                 btns = self.join_buttons
 
             for btn in btns:
-                if "rect" in btn and isinstance(btn["rect"], pygame.Rect):
-                    if btn["rect"].collidepoint(event.pos):
-                        if self.menu_state == "MAIN" and btn["text"] == "Play":
-                            if self.play_sound:
-                                self.play_sound.play()
-                        elif self.click_sound:
-                            self.click_sound.play()
+                if (
+                    "rect" in btn
+                    and isinstance(btn["rect"], pygame.Rect)
+                    and btn["rect"].collidepoint(event.pos)
+                ):
+                    if (
+                        self.menu_state == "MAIN"
+                        and btn["text"] == "Play"
+                        and self.play_sound
+                    ):
+                        self.play_sound.play()
+                    elif self.click_sound:
+                        self.click_sound.play()
 
-                        self.last_state = self.menu_state
-                        action = cast(str, btn["action"])
-                        if action == "show_modes":
-                            self.menu_state = "MODE"
-                        elif action == "show_settings":
-                            self.menu_state = "SETTINGS"
-                        elif action == "show_join_input":
-                            self.menu_state = "JOIN_INPUT"
-                        elif action == "back":
-                            self.menu_state = "MAIN"
-                            return "settings_updated"
-                        return action
+                    self.last_state = self.menu_state
+                    action = cast(str, btn["action"])
+                    if action == "show_modes":
+                        self.menu_state = "MODE"
+                    elif action == "show_settings":
+                        self.menu_state = "SETTINGS"
+                    elif action == "show_join_input":
+                        self.menu_state = "JOIN_INPUT"
+                    elif action == "back":
+                        self.menu_state = "MAIN"
+                        return "settings_updated"
+                    return action
 
         if (
             event.type == pygame.MOUSEMOTION

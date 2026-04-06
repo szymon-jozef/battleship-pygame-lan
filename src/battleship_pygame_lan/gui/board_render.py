@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Protocol, runtime_checkable
 
 import pygame
 
@@ -8,6 +8,14 @@ WHITE = (255, 255, 255)
 SHIP_COLOR = (100, 100, 100)
 MISS_COLOR = (150, 150, 255)
 HIT_COLOR = (255, 50, 50)
+
+
+@runtime_checkable
+class BoardLike(Protocol):
+    row: int
+    column: int
+
+    def get_field_state(self, row: int, col: int) -> FieldState: ...
 
 
 class BoardRenderer:
@@ -21,7 +29,7 @@ class BoardRenderer:
             FieldState.Hit: (60, 20, 20),
         }
 
-    def draw(self, board: Any, ox: int, oy: int, title: str) -> None:
+    def draw(self, board: BoardLike, ox: int, oy: int, title: str) -> None:
         title_surf = pygame.font.SysFont("Arial", 24, bold=True).render(
             title, True, WHITE
         )
