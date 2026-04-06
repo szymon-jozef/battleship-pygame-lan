@@ -35,7 +35,11 @@ class NetworkServer(NetworkCore):
         self.current_game_state: GameState | None = None
         self.current_turn: Player | None = None
 
-    def handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
+    def _handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
+        """
+        Private method for handling the client.
+        Remember! This method is meant to run in it's own thread
+        """
         with self.players_lock:
             if len(self.players) >= self.MAX_PLAYERS:
                 logger.info(
@@ -99,6 +103,9 @@ class NetworkServer(NetworkCore):
         logger.info(f"[Server] {player.addr} disconnected and cleaned up")
 
     def _handle_player_ready(self, current_player: Player) -> None:
+        """
+        Private method used when every player is ready for the game
+        """
         current_player.ready_status = True
 
         with self.players_lock:
@@ -115,6 +122,9 @@ class NetworkServer(NetworkCore):
             self.start_game()
 
     def start(self) -> None:
+        """
+        Method for starting the server. Needs to be run if you want to use the server!!!!
+        """
         logger.info("[STARTING] Server is starting")
         logger.info(f"[LISTENING] Server is listening on {self.HOST}")
 
@@ -123,7 +133,7 @@ class NetworkServer(NetworkCore):
         while True:
             conn, addr = self.server.accept()
             thread = threading.Thread(
-                target=self.handle_client, args=(conn, addr), daemon=True
+                target=self._handle_client, args=(conn, addr), daemon=True
             )
             thread.start()
             logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
@@ -146,7 +156,21 @@ class NetworkServer(NetworkCore):
                     f"Error while broadcasting to: {player.conn}\n\nError: {e}"
                 )
 
+    def _switch_turn(self) -> None:
+        """
+        Private method for switching turn.
+        Pretty self-explanatory, if I do say so myself
+        """
+        with self.players_lock:
+            for player in self.players:
+                if player != self.current_turn:
+                    self.current_turn = player
+                    break
+
     def route(self, msg: str, receiver: str) -> None:
+        """
+        Route the message to receiver
+        """
         player_receiver: Player | None = None
         with self.players_lock:
             for player in self.players:
@@ -164,11 +188,18 @@ class NetworkServer(NetworkCore):
             )
 
     def start_game(self) -> None:
+        """
+        Method for handling the game start.
+        It broadcasts the game was started
+        """
         logger.info("[SERVER] The game is starting!")
         payload = build_start_payload()
         self.broadcast(payload)
 
     def change_game_state(self, game_state: GameState) -> None:
+        """
+        Broadcast game state to every player
+        """
         logger.info(f"[Server] We're changing the game state to {game_state.value}")
         payload = build_game_state_payload(game_state)
         self.broadcast(payload)
