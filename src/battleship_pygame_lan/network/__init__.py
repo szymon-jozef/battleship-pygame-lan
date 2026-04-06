@@ -6,7 +6,7 @@ from .payloads import (
     build_ready_payload,
     build_shot_result_payload,
 )
-from .server import NetworkServer
+from .server import NetworkServer, Player
 
 __all__ = [
     "NetworkServer",
@@ -17,4 +17,5 @@ __all__ = [
     "build_ready_payload",
     "build_shot_result_payload",
     "build_connection_status_payload",
+    "Player",
 ]
