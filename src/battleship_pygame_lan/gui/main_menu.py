@@ -1,8 +1,9 @@
 import os
+from typing import Any, Dict, List, Optional, Tuple
 
 import pygame
 
-from ..logic.enums import FieldState, ShotResult
+from ..logic.enums import ShotResult
 
 # --- Constants ---
 WHITE = (255, 255, 255)
@@ -12,7 +13,7 @@ BUTTON_BG = (20, 20, 30, 220)
 
 
 class MainMenu:
-    def __init__(self, screen):
+    def __init__(self, screen: pygame.Surface) -> None:
         self.screen = screen
         self.screen_rect = screen.get_rect()
 
@@ -23,13 +24,13 @@ class MainMenu:
 
         # Assets & Animations
         self.bg_filenames = ["bg1.jpg", "bg2.jpg", "bg3.jpg"]
-        self.backgrounds = []
-        self.play_bg = None
-        self.click_sound = None
-        self.play_sound = None
-        self.hit_sound = None
-        self.miss_sound = None
-        self.volume = 0.5
+        self.backgrounds: List[pygame.Surface] = []
+        self.play_bg: Optional[pygame.Surface] = None
+        self.click_sound: Optional[pygame.mixer.Sound] = None
+        self.play_sound: Optional[pygame.mixer.Sound] = None
+        self.hit_sound: Optional[pygame.mixer.Sound] = None
+        self.miss_sound: Optional[pygame.mixer.Sound] = None
+        self.volume: float = 0.5
 
         self.load_assets()
 
@@ -41,10 +42,9 @@ class MainMenu:
         self.last_switch = pygame.time.get_ticks()
         self.is_fading = False
 
-        # State & UI Positioning
         self.menu_state = "MAIN"
         self.last_state = "MAIN"
-        self.panel_y = -self.screen_rect.height
+        self.panel_y = float(-self.screen_rect.height)
         self.slide_speed = 25
 
         self.player_name = "Morbius"
@@ -54,7 +54,6 @@ class MainMenu:
         self.slider_rect = pygame.Rect(0, 0, 300, 10)
         self.left_margin = 70
 
-        # Button Definitions
         self.main_buttons = [
             {"text": "Play", "pos_y": 240, "action": "show_modes"},
             {"text": "Settings", "pos_y": 330, "action": "show_settings"},
@@ -73,9 +72,8 @@ class MainMenu:
             {"text": "Back", "pos_y": 440, "action": "show_modes"},
         ]
 
-    def load_assets(self):
+    def load_assets(self) -> None:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        # Adjusted to move up 3 levels to find project root from /gui/ folder
         project_root = os.path.abspath(os.path.join(base_dir, "..", "..", ".."))
         gfx_path = os.path.join(project_root, "assets", "gfx")
         sfx_path = os.path.join(project_root, "assets", "sfx")
@@ -106,7 +104,7 @@ class MainMenu:
         except Exception:
             pass
 
-    def _load_and_scale(self, path):
+    def _load_and_scale(self, path: str) -> pygame.Surface:
         try:
             img = pygame.image.load(path).convert()
             return pygame.transform.scale(
@@ -117,7 +115,7 @@ class MainMenu:
             surf.fill((30, 30, 30))
             return surf
 
-    def update_sfx_volume(self):
+    def update_sfx_volume(self) -> None:
         for sound in [
             self.click_sound,
             self.play_sound,
@@ -127,15 +125,14 @@ class MainMenu:
             if sound:
                 sound.set_volume(self.volume)
 
-    def play_combat_sound(self, result: ShotResult):
+    def play_combat_sound(self, result: ShotResult) -> None:
         if result in [ShotResult.Hit, ShotResult.Sunk]:
             if self.hit_sound:
                 self.hit_sound.play()
-        elif result == ShotResult.Miss:
-            if self.miss_sound:
-                self.miss_sound.play()
+        elif result == ShotResult.Miss and self.miss_sound:
+            self.miss_sound.play()
 
-    def update(self):
+    def update(self) -> None:
         now = pygame.time.get_ticks()
         if not self.is_fading and now - self.last_switch > self.display_time:
             self.is_fading, self.alpha = True, 0
@@ -148,16 +145,16 @@ class MainMenu:
                 self.last_switch = now
 
         target_y = (
-            0
+            0.0
             if self.menu_state in ["MODE", "SETTINGS", "JOIN_INPUT"]
-            else -self.screen_rect.height
+            else float(-self.screen_rect.height)
         )
         if self.panel_y < target_y:
             self.panel_y = min(self.panel_y + self.slide_speed, target_y)
         elif self.panel_y > target_y:
             self.panel_y = max(self.panel_y - self.slide_speed, target_y)
 
-    def handle_events(self, event):
+    def handle_events(self, event: pygame.event.Event) -> Optional[str]:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.menu_state == "SETTINGS" and self.slider_rect.collidepoint(
                 event.pos
@@ -194,19 +191,22 @@ class MainMenu:
                         return "settings_updated"
                     return btn["action"]
 
-        if event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0]:
-            if self.menu_state == "SETTINGS" and self.slider_rect.collidepoint(
-                event.pos
-            ):
-                self._update_volume(event.pos[0])
+        if (
+            event.type == pygame.MOUSEMOTION
+            and pygame.mouse.get_pressed()[0]
+            and self.menu_state == "SETTINGS"
+            and self.slider_rect.collidepoint(event.pos)
+        ):
+            self._update_volume(event.pos[0])
+
         return None
 
-    def _update_volume(self, mouse_x):
+    def _update_volume(self, mouse_x: int) -> None:
         rel_x = max(0, min(mouse_x - self.slider_rect.left, self.slider_rect.width))
         self.volume = rel_x / self.slider_rect.width
         self.update_sfx_volume()
 
-    def draw(self):
+    def draw(self) -> None:
         self.update()
         self.screen.blit(self.backgrounds[self.current_idx], (0, 0))
         if self.is_fading:
@@ -219,9 +219,9 @@ class MainMenu:
             if active == "SETTINGS":
                 ov = pygame.Surface(self.screen_rect.size, pygame.SRCALPHA)
                 ov.fill((10, 10, 20, 220))
-                self.screen.blit(ov, (0, self.panel_y))
+                self.screen.blit(ov, (0, int(self.panel_y)))
             elif self.play_bg:
-                self.screen.blit(self.play_bg, (0, self.panel_y))
+                self.screen.blit(self.play_bg, (0, int(self.panel_y)))
 
         m_pos = pygame.mouse.get_pos()
         if self.menu_state == "MAIN" and self.panel_y <= -self.screen_rect.height:
@@ -232,16 +232,17 @@ class MainMenu:
             self._draw_buttons(self.main_buttons, m_pos)
         else:
             active = self.menu_state if self.menu_state != "MAIN" else self.last_state
+            off_y = int(self.panel_y)
             if active == "MODE":
-                self._draw_buttons(self.mode_buttons, m_pos, True, self.panel_y)
+                self._draw_buttons(self.mode_buttons, m_pos, True, off_y)
             elif active == "SETTINGS":
-                self._draw_settings_view(m_pos, self.panel_y)
-                self._draw_buttons(self.settings_buttons, m_pos, True, self.panel_y)
+                self._draw_settings_view(m_pos, off_y)
+                self._draw_buttons(self.settings_buttons, m_pos, True, off_y)
             elif active == "JOIN_INPUT":
-                self._draw_input_content("HOST IP:", self.host_ip, m_pos, self.panel_y)
-                self._draw_buttons(self.join_buttons, m_pos, True, self.panel_y)
+                self._draw_input_content("HOST IP:", self.host_ip, m_pos, off_y)
+                self._draw_buttons(self.join_buttons, m_pos, True, off_y)
 
-    def _draw_settings_view(self, m_pos, off_y):
+    def _draw_settings_view(self, m_pos: Tuple[int, int], off_y: int) -> None:
         self._draw_input_content("PLAYER NAME:", self.player_name, m_pos, off_y, 150)
         self.screen.blit(
             self.font_label.render("VOLUME:", True, WHITE),
@@ -254,7 +255,9 @@ class MainMenu:
             self.screen, HOVER_COLOR, (hx - 7, self.slider_rect.y - 7, 15, 25)
         )
 
-    def _draw_input_content(self, lbl, val, m_pos, off_y, top=180):
+    def _draw_input_content(
+        self, lbl: str, val: str, m_pos: Tuple[int, int], off_y: int, top: int = 180
+    ) -> None:
         self.screen.blit(
             self.font_label.render(lbl, True, WHITE),
             (self.screen_rect.centerx - 80, top + off_y),
@@ -268,7 +271,13 @@ class MainMenu:
         self.screen.blit(txt, txt.get_rect(center=rect.center))
         self.input_field_rect = rect
 
-    def _draw_buttons(self, b_list, m_pos, center=False, off_y=0):
+    def _draw_buttons(
+        self,
+        b_list: List[Dict[str, Any]],
+        m_pos: Tuple[int, int],
+        center: bool = False,
+        off_y: int = 0,
+    ) -> None:
         for b in b_list:
             r = pygame.Rect(0, 0, 280, 65)
             if center:

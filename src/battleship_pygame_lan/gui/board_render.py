@@ -1,8 +1,10 @@
+from typing import Optional, Tuple
+
 import pygame
 
 from ..logic.enums import FieldState
 
-# Shared Constants (matching MainMenu for consistency)
+# Shared Constants
 WHITE = (255, 255, 255)
 SHIP_COLOR = (100, 100, 100)
 MISS_COLOR = (150, 150, 255)
@@ -10,7 +12,7 @@ HIT_COLOR = (255, 50, 50)
 
 
 class BoardRenderer:
-    def __init__(self, screen):
+    def __init__(self, screen: pygame.Surface) -> None:
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 18)
         self.colors = {
@@ -20,7 +22,7 @@ class BoardRenderer:
             FieldState.Hit: (60, 20, 20),
         }
 
-    def draw(self, board, ox, oy, title):
+    def draw(self, board: any, ox: int, oy: int, title: str) -> None:
         title_surf = pygame.font.SysFont("Arial", 24, bold=True).render(
             title, True, WHITE
         )
@@ -80,6 +82,8 @@ class BoardRenderer:
                 # Cell Border
                 pygame.draw.rect(self.screen, (20, 40, 70), rect, 1)
 
-    def get_clicked_cell(self, pos, ox, oy):
+    def get_clicked_cell(
+        self, pos: Tuple[int, int], ox: int, oy: int
+    ) -> Optional[Tuple[int, int]]:
         col, row = (pos[0] - ox) // 42, (pos[1] - oy) // 42
         return (int(row), int(col)) if 0 <= row < 10 and 0 <= col < 10 else None
