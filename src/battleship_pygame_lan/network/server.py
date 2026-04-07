@@ -198,11 +198,15 @@ class NetworkServer(NetworkCore):
             f"({ready_count}/{self.MAX_PLAYERS}) out of {players_len} "
             "connected"
         )
-
-        try:
-            self._start_game()
-        except RuntimeError as e:
-            logger.warning(f"[Server] warning: {e}")
+        if ready_count == self.MAX_PLAYERS:
+            try:
+                self._start_game()
+            except RuntimeError as e:
+                logger.error(f"[Server] {e}")
+        else:
+            logger.info(
+                f"[Server] Czekam na resztę graczy ({ready_count}/{self.MAX_PLAYERS})"
+            )
 
     def _switch_turn(self) -> None:
         """
@@ -228,7 +232,7 @@ class NetworkServer(NetworkCore):
             )
         if ready_players != self.MAX_PLAYERS:
             raise RuntimeError(
-                "Can't start the game, because every player isn't ready yet!"
+                "Critical: tried to start game when some players aren't ready!"
             )
 
         logger.info("[SERVER] The game is starting!")
