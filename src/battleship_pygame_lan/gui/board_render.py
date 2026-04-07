@@ -9,6 +9,14 @@ SHIP_COLOR = (100, 100, 100)
 MISS_COLOR = (150, 150, 255)
 HIT_COLOR = (255, 50, 50)
 
+CELL_SIZE = 40
+CELL_MARGIN = 2
+GRID_STEP = CELL_SIZE + CELL_MARGIN
+LABEL_OFFSET_X = 25
+LABEL_OFFSET_Y = 10
+COLUMN_LABEL_Y = 20
+TITLE_OFFSET_Y = 40
+
 
 @runtime_checkable
 class BoardLike(Protocol):
@@ -33,20 +41,23 @@ class BoardRenderer:
         title_surf = pygame.font.SysFont("Arial", 24, bold=True).render(
             title, True, WHITE
         )
-        self.screen.blit(title_surf, (ox, oy - 40))
+        self.screen.blit(title_surf, (ox, oy - TITLE_OFFSET_Y))
 
         for r in range(board.row):
+            label_y = oy + (r * GRID_STEP) + LABEL_OFFSET_Y
             self.screen.blit(
-                self.font.render(str(r), True, WHITE), (ox - 25, oy + r * 42 + 10)
+                self.font.render(str(r), True, WHITE), (ox - LABEL_OFFSET_X, label_y)
             )
             for c in range(board.column):
                 if r == 0:
                     self.screen.blit(
                         self.font.render(str(c), True, WHITE),
-                        (ox + c * 42 + 15, oy - 20),
+                        (ox + (c * GRID_STEP) + 15, oy - COLUMN_LABEL_Y),
                     )
 
-                rect = pygame.Rect(ox + c * 42, oy + r * 42, 40, 40)
+                rect = pygame.Rect(
+                    ox + (c * GRID_STEP), oy + (r * GRID_STEP), CELL_SIZE, CELL_SIZE
+                )
                 state = board.get_field_state(r, c)
                 base_color = self.colors.get(state, (30, 30, 60))
 
@@ -85,5 +96,5 @@ class BoardRenderer:
     def get_clicked_cell(
         self, pos: tuple[int, int], ox: int, oy: int
     ) -> tuple[int, int] | None:
-        col, row = (pos[0] - ox) // 42, (pos[1] - oy) // 42
+        col, row = (pos[0] - ox) // GRID_STEP, (pos[1] - oy) // GRID_STEP
         return (int(row), int(col)) if 0 <= row < 10 and 0 <= col < 10 else None
