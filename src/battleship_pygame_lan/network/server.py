@@ -157,9 +157,9 @@ class NetworkServer(NetworkCore):
                             if player_name:
                                 current_player.player_name = str(player_name)
                             self._handle_player_ready(current_player)
-                        case PayloadTypes.ATTACK.value:  # TODO! test this
+                        case PayloadTypes.ATTACK.value:
                             self._handle_attack(payload_data, msg)
-                        case PayloadTypes.SHOT_RESULT.value:  # TODO! and test this
+                        case PayloadTypes.SHOT_RESULT.value:
                             self._handle_shot_result(payload_data, msg)
                         case _:
                             pass

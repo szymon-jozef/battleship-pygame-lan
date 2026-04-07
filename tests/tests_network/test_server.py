@@ -5,12 +5,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from battleship_pygame_lan.logic import ShotResult
 from battleship_pygame_lan.network import (
+    GameState,
     NetworkClient,
     NetworkPlayer,
     NetworkServer,
     build_attack_payload,
     build_end_game_payload,
+    build_shot_result_payload,
     build_start_game_payload,
 )
 
@@ -83,6 +86,59 @@ def test_server_attack_route(mock_server: NetworkServer) -> None:
     mock_conn_spider.sendall.assert_any_call(expected_bytes)
 
     mock_conn_morbius.sendall.assert_not_called()
+
+
+def test_server_shot_result_route(mock_server: NetworkServer) -> None:
+    mock_conn_morbius = MagicMock()
+    player_morbius = NetworkPlayer(mock_conn_morbius, addr=("127.0.0.1", 5001))
+    player_morbius.player_name = "morbius"
+
+    mock_conn_spider = MagicMock()
+    player_spider = NetworkPlayer(mock_conn_spider, addr=("127.0.0.2", 5002))
+    player_spider.player_name = "spider-mid"
+
+    mock_server.players = [player_morbius, player_spider]
+    mock_server.current_turn = player_spider
+    mock_server.current_game_state = GameState.WAR
+
+    msg: str = build_shot_result_payload(
+        row=2, column=2, result=ShotResult.Hit, sender="morbius", receiver="spider-mid"
+    )
+    payload_data: dict = json.loads(msg)
+
+    mock_server._handle_shot_result(payload_data, msg)
+
+    expected_bytes = msg.encode("utf-8")
+
+    mock_conn_spider.sendall.assert_any_call(expected_bytes)
+
+    mock_conn_morbius.sendall.assert_not_called()
+
+    assert mock_server.current_turn is player_morbius
+
+
+def test_shot_result_no_war(mock_server: NetworkServer) -> None:
+    mock_conn_morbius = MagicMock()
+    player_morbius = NetworkPlayer(mock_conn_morbius, addr=("127.0.0.1", 5001))
+    player_morbius.player_name = "morbius"
+
+    mock_conn_spider = MagicMock()
+    player_spider = NetworkPlayer(mock_conn_spider, addr=("127.0.0.2", 5002))
+    player_spider.player_name = "spider-mid"
+
+    mock_server.players = [player_morbius, player_spider]
+    mock_server.current_turn = player_spider
+    mock_server.current_game_state = GameState.LOBBY
+
+    msg: str = build_shot_result_payload(
+        row=2, column=2, result=ShotResult.Hit, sender="morbius", receiver="spider-mid"
+    )
+    payload_data: dict = json.loads(msg)
+
+    mock_server._handle_shot_result(payload_data, msg)
+    mock_conn_morbius.sendall.assert_not_called()
+    mock_conn_spider.sendall.assert_not_called()
+    assert mock_server.current_turn is player_spider
 
 
 def test_server_reject_conn_full(mock_server: NetworkServer) -> None:
