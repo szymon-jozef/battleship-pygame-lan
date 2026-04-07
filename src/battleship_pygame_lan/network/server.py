@@ -161,6 +161,8 @@ class NetworkServer(NetworkCore):
                             self._handle_attack(payload_data, msg)
                         case PayloadTypes.SHOT_RESULT.value:
                             self._handle_shot_result(payload_data, msg)
+                        case PayloadTypes.LOST:
+                            pass
                         case _:
                             pass
 

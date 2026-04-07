@@ -27,9 +27,9 @@ class PayloadTypes(StrEnum):
         ATTACK - used when you want to attack someone
         SHOT_RESULT - used when you were attacked
         READY - used to signal that you're ready to play
-        START - used by the server to say that the game is about to start
-        END - used when you lost all ships
-        GAME_OVER - used by the server to say someone has lost
+        GAME_START - used by the server to say that the game is about to start
+        GAME_END - used by the server to say that the game has ended
+        LOST - used when you lost all ships
         GAME_STATE - used by the server to indicate current game state
     """
 
@@ -38,6 +38,6 @@ class PayloadTypes(StrEnum):
     SHOT_RESULT = "shot_result"
     READY = "ready"
     GAME_START = "game_start"
-    LOST = "lost"
     GAME_END = "game_end"
+    LOST = "lost"
     GAME_STATE = "game_state"
