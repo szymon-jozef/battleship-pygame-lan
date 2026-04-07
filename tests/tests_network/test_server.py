@@ -8,7 +8,8 @@ from battleship_pygame_lan.network import (
     NetworkClient,
     NetworkPlayer,
     NetworkServer,
-    build_start_payload,
+    build_end_game_payload,
+    build_start_game_payload,
 )
 
 
@@ -42,7 +43,18 @@ def test_server_start_game(mock_server: NetworkServer) -> None:
 
     mock_server.start_game()
 
-    expected_paload: bytes = build_start_payload().encode("utf-8")
+    expected_paload: bytes = build_start_game_payload().encode("utf-8")
+    mock_conn.sendall.assert_any_call(expected_paload)
+
+
+def test_server_end_game(mock_server: NetworkServer) -> None:
+    mock_conn = MagicMock()
+    mock_player = NetworkPlayer(mock_conn, addr=("127.0.0.2", 5001))
+    mock_server.players = [mock_player]
+
+    mock_server.end_game()
+
+    expected_paload: bytes = build_end_game_payload().encode("utf-8")
     mock_conn.sendall.assert_any_call(expected_paload)
 
 

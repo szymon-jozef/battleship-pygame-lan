@@ -103,7 +103,7 @@ def build_ready_payload(player_name: str, status: bool = True) -> str:
     )
 
 
-def build_start_payload(start: bool = True) -> str:
+def build_start_game_payload(start: bool = True) -> str:
     """
     Payload server sends to the players, saying it's time to start the game
     """
@@ -117,7 +117,7 @@ def build_end_payload(player_name: str, end: bool = True) -> str:
     return dumps({"type": PayloadTypes.END, "end": end, "player_name": player_name})
 
 
-def build_game_over_payload(over: bool = True) -> str:
+def build_end_game_payload(over: bool = True) -> str:
     """
     Payload server sends to the player, saying the game was has ended
     """

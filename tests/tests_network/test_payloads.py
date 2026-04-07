@@ -53,7 +53,7 @@ def test_building_payloads_ready() -> None:
 
 
 def test_building_payloads_start() -> None:
-    start_json_str = payloads.build_start_payload()
+    start_json_str = payloads.build_start_game_payload()
     start_dict = json.loads(start_json_str)
     expected_start = {
         "type": "start",
@@ -74,14 +74,14 @@ def test_building_payloads_end() -> None:
     assert end_dict == expected_end
 
 
-def test_building_payloads_game_over() -> None:
-    game_over_json_str = payloads.build_game_over_payload()
-    game_over_dict = json.loads(game_over_json_str)
-    expected_game_over = {
+def test_building_payloads_game_end() -> None:
+    game_end_json_str = payloads.build_end_game_payload()
+    game_end_dict = json.loads(game_end_json_str)
+    expected_game_end = {
         "type": "game_over",
         "over": True,
     }
-    assert game_over_dict == expected_game_over
+    assert game_end_dict == expected_game_end
 
 
 def test_building_payloads_game_state() -> None:

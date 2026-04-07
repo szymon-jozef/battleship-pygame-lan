@@ -8,9 +8,9 @@ from battleship_pygame_lan.logic import ShotResult
 from .models import GameState, NetworkPlayer, PayloadTypes
 from .network_core import NetworkCore
 from .payloads import (
-    build_game_over_payload,
+    build_end_game_payload,
     build_game_state_payload,
-    build_start_payload,
+    build_start_game_payload,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class NetworkServer(NetworkCore):
         It broadcasts the game was started
         """
         logger.info("[SERVER] The game is starting!")
-        payload = build_start_payload()
+        payload = build_start_game_payload()
         self._broadcast(payload)
 
     def end_game(self) -> None:
@@ -61,7 +61,7 @@ class NetworkServer(NetworkCore):
         Method for broadcasting the game has finished.
         """
         logger.info("[Server] The game has finished!")
-        payload = build_game_over_payload()
+        payload = build_end_game_payload()
         self._broadcast(payload)
 
     def change_game_state(self, game_state: GameState) -> None:
