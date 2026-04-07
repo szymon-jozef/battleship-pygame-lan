@@ -3,6 +3,7 @@ import json
 from battleship_pygame_lan.logic import ShotResult
 from battleship_pygame_lan.network import (
     GameState,
+    ReadyType,
     payloads,
 )
 
@@ -42,11 +43,26 @@ def test_building_payloads_shot_result() -> None:
 
 
 def test_building_payloads_ready() -> None:
-    ready_json_str = payloads.build_ready_payload("Morbius")
+    ready_type: ReadyType = ReadyType.LOBBY
+    ready_json_str = payloads.build_ready_payload("Morbius", ready_type)
     ready_dict = json.loads(ready_json_str)
     expected_ready = {
         "type": "ready",
         "player_name": "Morbius",
+        "ready_type": "lobby_ready",
+        "status": True,
+    }
+    assert ready_dict == expected_ready
+
+
+def test_building_payloads_ready_ship_placed() -> None:
+    ready_type: ReadyType = ReadyType.SHIP_PLACED
+    ready_json_str = payloads.build_ready_payload("Spider-mid", ready_type)
+    ready_dict = json.loads(ready_json_str)
+    expected_ready = {
+        "type": "ready",
+        "player_name": "Spider-mid",
+        "ready_type": "ship_placed",
         "status": True,
     }
     assert ready_dict == expected_ready

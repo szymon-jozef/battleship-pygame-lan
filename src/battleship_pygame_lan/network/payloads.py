@@ -2,7 +2,7 @@ from json import dumps
 
 from battleship_pygame_lan.logic import ShotResult
 
-from .models import GameState, PayloadTypes
+from .models import GameState, PayloadTypes, ReadyType
 
 """
 What communication do we want?
@@ -94,12 +94,19 @@ def build_shot_result_payload(
     )
 
 
-def build_ready_payload(player_name: str, status: bool = True) -> str:
+def build_ready_payload(
+    player_name: str, ready_type: ReadyType, status: bool = True
+) -> str:
     """
     Payload player sends to the server, saying if he is ready to start the game
     """
     return dumps(
-        {"type": PayloadTypes.READY, "player_name": player_name, "status": status}
+        {
+            "type": PayloadTypes.READY,
+            "player_name": player_name,
+            "ready_type": ready_type,
+            "status": status,
+        }
     )
 
 

@@ -5,7 +5,7 @@ import threading
 
 from battleship_pygame_lan.logic import ShotResult
 
-from .models import GameState, NetworkPlayer, PayloadTypes
+from .models import GameState, NetworkPlayer, PayloadTypes, ReadyType
 from .network_core import NetworkCore
 from .payloads import (
     build_end_game_payload,
@@ -128,7 +128,11 @@ class NetworkServer(NetworkCore):
                             player_name = payload_data.get("player_name")
                             if player_name:
                                 current_player.player_name = str(player_name)
-                            self._handle_player_ready(current_player)
+                            ready_type: ReadyType = ReadyType(
+                                payload_data.get("ready_type")
+                            )
+                            self._handle_player_ready(player_name, ready_type)
+
                         case PayloadTypes.ATTACK.value:
                             self._handle_attack(payload_data, msg)
                         case PayloadTypes.SHOT_RESULT.value:
@@ -145,6 +149,18 @@ class NetworkServer(NetworkCore):
                 logger.error(f"[Server] Critical error from: {addr}")
                 break
         self._handle_player_cleanup(current_player)
+
+    def _handle_player_ready(
+        self, current_player: NetworkPlayer, ready_type: ReadyType
+    ) -> None:
+        try:
+            match ready_type:
+                case ReadyType.LOBBY:
+                    self._handle_player_lobby_ready(current_player)
+                case ReadyType.SHIP_PLACED:
+                    self._handle_player_ship_placed(current_player)
+        except ValueError:
+            logger.error(f"[Server] Invalid ready_type received: {ready_type}")
 
     def _handle_attack(self, payload_data: dict, msg: str) -> None:
         receiver: str | None = payload_data.get("receiver")
@@ -183,7 +199,7 @@ class NetworkServer(NetworkCore):
         player.conn.close()
         logger.info(f"[Server] {player.addr} disconnected and cleaned up")
 
-    def _handle_player_ready(self, current_player: NetworkPlayer) -> None:
+    def _handle_player_lobby_ready(self, current_player: NetworkPlayer) -> None:
         """
         Private method used when every player is ready for the game
         """
@@ -196,7 +212,7 @@ class NetworkServer(NetworkCore):
         logger.info(
             f"[Server] Player {current_player.player_name} is ready! "
             f"({ready_count}/{self.MAX_PLAYERS}) out of {players_len} "
-            "connected"
+            "are ready"
         )
         if ready_count == self.MAX_PLAYERS:
             try:
@@ -205,7 +221,35 @@ class NetworkServer(NetworkCore):
                 logger.error(f"[Server] {e}")
         else:
             logger.info(
-                f"[Server] Czekam na resztę graczy ({ready_count}/{self.MAX_PLAYERS})"
+                "[Server] Waiting for the rest of the players "
+                f"({ready_count}/{self.MAX_PLAYERS})"
+            )
+
+    def _handle_player_ship_placed(self, current_player: NetworkPlayer) -> None:
+        """
+        Private method used when every player placed his ships
+        """
+        current_player.ready_status = True
+
+        with self.players_lock:
+            ready_count = sum(1 for c in self.players if c.ready_status)
+            players_len = len(self.players)
+
+        logger.info(
+            f"[Server] Player {current_player.player_name} has placed all his ships! "
+            f"({ready_count}/{self.MAX_PLAYERS}) out of {players_len} "
+            "placed"
+        )
+
+        if ready_count == self.MAX_PLAYERS:
+            try:
+                self._start_war()
+            except RuntimeError as e:
+                logger.error(f"[Server] {e}")
+        else:
+            logger.info(
+                "[Server] Waiting for the rest of the players "
+                f"({ready_count}/{self.MAX_PLAYERS})"
             )
 
     def _switch_turn(self) -> None:
@@ -238,8 +282,10 @@ class NetworkServer(NetworkCore):
         logger.info("[SERVER] The game is starting!")
         payload = build_start_game_payload()
         self._broadcast(payload)
-        self._switch_turn()
         self.current_game_state = GameState.SHIP_PLACEMENT
+        with self.players_lock:
+            for player in self.players:
+                player.ready_status = False
         self._change_game_state(self.current_game_state)
 
     def _end_game(self, loser: str) -> None:
@@ -250,6 +296,21 @@ class NetworkServer(NetworkCore):
         payload = build_end_game_payload(loser)
         self._broadcast(payload)
         self.current_game_state = GameState.FINISH
+        self._change_game_state(self.current_game_state)
+
+    def _start_war(self) -> None:
+        with self.players_lock:
+            ready_players: int = sum(
+                1 for player in self.players if player.ready_status
+            )
+
+        if ready_players != self.MAX_PLAYERS:
+            raise RuntimeError(
+                "Critical: tried to start a war when not every side is ready!"
+            )
+
+        self._switch_turn()
+        self.current_game_state = GameState.WAR
         self._change_game_state(self.current_game_state)
 
     def _change_game_state(self, game_state: GameState) -> None:

@@ -41,3 +41,12 @@ class PayloadTypes(StrEnum):
     GAME_END = "game_end"
     LOST = "lost"
     GAME_STATE = "game_state"
+
+
+class ReadyType(StrEnum):
+    """
+    Enum representing the type of readiness player wants to show
+    """
+
+    LOBBY = "lobby_ready"
+    SHIP_PLACED = "ship_placed"

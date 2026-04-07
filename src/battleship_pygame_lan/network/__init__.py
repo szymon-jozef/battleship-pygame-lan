@@ -1,5 +1,5 @@
 from .client import NetworkClient
-from .models import NetworkPlayer
+from .models import NetworkPlayer, ReadyType
 from .payloads import (
     GameState,
     PayloadTypes,
@@ -23,4 +23,5 @@ __all__ = [
     "build_connection_status_payload",
     "NetworkPlayer",
     "GameState",
+    "ReadyType",
 ]
