@@ -44,9 +44,14 @@ def test_server_initialization(mock_server: NetworkServer) -> None:
 def test_server_start_game(mock_server: NetworkServer) -> None:
     mock_conn = MagicMock()
     mock_player = NetworkPlayer(mock_conn, addr=("127.0.0.2", 5001))
-    mock_server.players = [mock_player]
 
-    mock_server.start_game()
+    mock_conn2 = MagicMock()
+    mock_player2 = NetworkPlayer(mock_conn2, addr=("127.0.0.2", 5001))
+    mock_player.ready_status = True
+    mock_player2.ready_status = True
+    mock_server.players = [mock_player, mock_player2]
+
+    mock_server._start_game()
 
     expected_paload: bytes = build_start_game_payload().encode("utf-8")
     mock_conn.sendall.assert_any_call(expected_paload)
@@ -57,7 +62,7 @@ def test_server_end_game(mock_server: NetworkServer) -> None:
     mock_player = NetworkPlayer(mock_conn, addr=("127.0.0.2", 5001))
     mock_server.players = [mock_player]
 
-    mock_server.end_game()
+    mock_server._end_game()
 
     expected_paload: bytes = build_end_game_payload().encode("utf-8")
     mock_conn.sendall.assert_any_call(expected_paload)

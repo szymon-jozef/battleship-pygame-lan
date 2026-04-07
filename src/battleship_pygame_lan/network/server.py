@@ -45,33 +45,6 @@ class NetworkServer(NetworkCore):
             thread.start()
             logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
-    def start_game(
-        self,
-    ) -> None:
-        """
-        Method for handling the game start.
-        It broadcasts the game was started
-        """
-        logger.info("[SERVER] The game is starting!")
-        payload = build_start_game_payload()
-        self._broadcast(payload)
-
-    def end_game(self) -> None:
-        """
-        Method for broadcasting the game has finished.
-        """
-        logger.info("[Server] The game has finished!")
-        payload = build_end_game_payload()
-        self._broadcast(payload)
-
-    def change_game_state(self, game_state: GameState) -> None:
-        """
-        Broadcast game state to every player
-        """
-        logger.info(f"[Server] We're changing the game state to {game_state.value}")
-        payload = build_game_state_payload(game_state)
-        self._broadcast(payload)
-
     def _broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
         """
         Send message to every connected client
@@ -226,9 +199,10 @@ class NetworkServer(NetworkCore):
             "connected"
         )
 
-        if ready_count == self.MAX_PLAYERS:
-            self.start_game()
-            self._switch_turn()
+        try:
+            self._start_game()
+        except RuntimeError as e:
+            logger.warning(f"[Server] warning: {e}")
 
     def _switch_turn(self) -> None:
         """
@@ -240,3 +214,42 @@ class NetworkServer(NetworkCore):
                 if player != self.current_turn:
                     self.current_turn = player
                     break
+
+    def _start_game(
+        self,
+    ) -> None:
+        """
+        Private method for handling the game start.
+        It broadcasts the game was started, if every player is ready
+        """
+        with self.players_lock:
+            ready_players: int = sum(
+                1 for player in self.players if player.ready_status
+            )
+        if ready_players != self.MAX_PLAYERS:
+            raise RuntimeError(
+                "Can't start the game, because every player isn't ready yet!"
+            )
+
+        logger.info("[SERVER] The game is starting!")
+        payload = build_start_game_payload()
+        self._broadcast(payload)
+        self._switch_turn()
+        self.current_game_state = GameState.SHIP_PLACEMENT
+        self._change_game_state(self.current_game_state)
+
+    def _end_game(self) -> None:
+        """
+        Private method for broadcasting the game has finished.
+        """
+        logger.info("[Server] The game has finished!")
+        payload = build_end_game_payload()
+        self._broadcast(payload)
+
+    def _change_game_state(self, game_state: GameState) -> None:
+        """
+        Broadcast game state to every player
+        """
+        logger.info(f"[Server] We're changing the game state to {game_state.value}")
+        payload = build_game_state_payload(game_state)
+        self._broadcast(payload)
