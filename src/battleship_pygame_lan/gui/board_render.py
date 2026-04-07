@@ -20,10 +20,18 @@ TITLE_OFFSET_Y = 40
 
 @runtime_checkable
 class BoardLike(Protocol):
+    """
+    Protocol defining the required interface for board-like objects.
+
+    Any object used by the BoardRenderer must implement these attributes
+    and methods to ensure compatibility between the logic and GUI layers.
+    """
+
     row: int
     column: int
 
-    def get_field_state(self, row: int, col: int) -> FieldState: ...
+    def get_field_state(self, row: int, col: int) -> FieldState:
+        """Return the FieldState at the given coordinates."""
 
 
 class BoardRenderer:
