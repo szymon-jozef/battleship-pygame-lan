@@ -30,8 +30,12 @@ class NetworkClient(NetworkCore):
         super().__init__(ip_address=server_ip)
 
         self.player_name: str = player_name
+        self.enemy_name: str | None = (
+            None  # TODO! make new payload for the server and tell this
+        )
         self.message_queue: Queue = Queue()
         self.connected: bool = False
+        self.is_my_turn: bool = False
         self.current_game_state: GameState | None = None
 
     def connect(self) -> None:
@@ -53,7 +57,8 @@ class NetworkClient(NetworkCore):
     def send_attack_info(
         self, row: int, column: int, sender: str, receiver: str
     ) -> None:
-        self.send(build_attack_payload(row, column, sender, receiver))
+        if self.is_my_turn:
+            self.send(build_attack_payload(row, column, sender, receiver))
 
     def send_shot_result(
         self, row: int, column: int, shot_result: ShotResult, sender: str, receiver: str
@@ -102,6 +107,10 @@ class NetworkClient(NetworkCore):
                                 self.current_game_state = (
                                     GameState[state] if state else None
                                 )
+                            case PayloadTypes.CHANGE_TURN.value:
+                                turn = payload_data.get("turn")
+                                self.is_my_turn = turn == self.player_name
+                                self.message_queue.put(payload_data)
                             case _ if payload_type in [
                                 e.value for e in PayloadTypes
                             ]:  # we put every other PayloadType on the queue
