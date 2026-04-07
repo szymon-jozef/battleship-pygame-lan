@@ -15,11 +15,9 @@ class MainMenu:
     def __init__(self, screen: pygame.Surface) -> None:
         self.screen = screen
         self.screen_rect = screen.get_rect()
-
         self.font_title = pygame.font.SysFont("Arial", 80, bold=True)
         self.font_button = pygame.font.SysFont("Arial", 38)
         self.font_label = pygame.font.SysFont("Arial", 28)
-
         self.bg_filenames = ["bg1.jpg", "bg2.jpg", "bg3.jpg"]
         self.backgrounds: list[pygame.Surface] = []
         self.play_bg: pygame.Surface | None = None
@@ -28,9 +26,7 @@ class MainMenu:
         self.hit_sound: pygame.mixer.Sound | None = None
         self.miss_sound: pygame.mixer.Sound | None = None
         self.volume: float = 0.5
-
         self.load_assets()
-
         self.current_idx = 0
         self.next_idx = 1
         self.alpha = 0
@@ -38,19 +34,16 @@ class MainMenu:
         self.display_time = 20000
         self.last_switch = pygame.time.get_ticks()
         self.is_fading = False
-
         self.menu_state = "MAIN"
         self.last_state = "MAIN"
         self.panel_y = float(-self.screen_rect.height)
         self.slide_speed = 25
-
         self.player_name = "Morbius"
         self.host_ip = "127.0.0.1"
         self.input_active = False
         self.input_field_rect = pygame.Rect(0, 0, 0, 0)
         self.slider_rect = pygame.Rect(0, 0, 300, 10)
         self.left_margin = 70
-
         self.main_buttons: list[dict[str, Any]] = [
             {"text": "Play", "pos_y": 240, "action": "show_modes"},
             {"text": "Settings", "pos_y": 330, "action": "show_settings"},
@@ -74,29 +67,25 @@ class MainMenu:
         project_root = os.path.abspath(os.path.join(base_dir, "..", "..", ".."))
         gfx_path = os.path.join(project_root, "assets", "gfx")
         sfx_path = os.path.join(project_root, "assets", "sfx")
-
         self.backgrounds = [
             self._load_and_scale(os.path.join(gfx_path, f)) for f in self.bg_filenames
         ]
         self.play_bg = self._load_and_scale(
             os.path.join(gfx_path, "play_background.jpg")
         )
-
         try:
-            click_file = os.path.join(sfx_path, "click.mp3")
-            play_file = os.path.join(sfx_path, "play.mp3")
-            hit_file = os.path.join(sfx_path, "hit.mp3")
-            miss_file = os.path.join(sfx_path, "miss.mp3")
-
-            if os.path.exists(click_file):
-                self.click_sound = pygame.mixer.Sound(click_file)
-            if os.path.exists(play_file):
-                self.play_sound = pygame.mixer.Sound(play_file)
-            if os.path.exists(hit_file):
-                self.hit_sound = pygame.mixer.Sound(hit_file)
-            if os.path.exists(miss_file):
-                self.miss_sound = pygame.mixer.Sound(miss_file)
-
+            c_f, p_f, h_f, m_f = [
+                os.path.join(sfx_path, x)
+                for x in ["click.mp3", "play.mp3", "hit.mp3", "miss.mp3"]
+            ]
+            if os.path.exists(c_f):
+                self.click_sound = pygame.mixer.Sound(c_f)
+            if os.path.exists(p_f):
+                self.play_sound = pygame.mixer.Sound(p_f)
+            if os.path.exists(h_f):
+                self.hit_sound = pygame.mixer.Sound(h_f)
+            if os.path.exists(m_f):
+                self.miss_sound = pygame.mixer.Sound(m_f)
             self.update_sfx_volume()
         except Exception:
             pass
@@ -123,9 +112,8 @@ class MainMenu:
                 sound.set_volume(self.volume)
 
     def play_combat_sound(self, result: ShotResult) -> None:
-        if result in [ShotResult.Hit, ShotResult.Sunk]:
-            if self.hit_sound:
-                self.hit_sound.play()
+        if result in [ShotResult.Hit, ShotResult.Sunk] and self.hit_sound:
+            self.hit_sound.play()
         elif result == ShotResult.Miss and self.miss_sound:
             self.miss_sound.play()
 
@@ -140,7 +128,6 @@ class MainMenu:
                 self.current_idx = self.next_idx
                 self.next_idx = (self.current_idx + 1) % len(self.backgrounds)
                 self.last_switch = now
-
         target_y = (
             0.0
             if self.menu_state in ["MODE", "SETTINGS", "JOIN_INPUT"]
@@ -153,10 +140,10 @@ class MainMenu:
 
     def handle_events(self, event: pygame.event.Event) -> str | None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.menu_state == "SETTINGS" and self.slider_rect.collidepoint(
-                event.pos
-            ):
-                self._update_volume(event.pos[0])
+            if self.menu_state == "SETTINGS":
+                if self.slider_rect.collidepoint(event.pos):
+                    self._update_volume(event.pos[0])
+                self.input_active = self.input_field_rect.collidepoint(event.pos)
 
             btns: list[dict[str, Any]] = []
             if self.menu_state == "MAIN":
@@ -182,7 +169,6 @@ class MainMenu:
                         self.play_sound.play()
                     elif self.click_sound:
                         self.click_sound.play()
-
                     self.last_state = self.menu_state
                     action = cast(str, btn["action"])
                     if action == "show_modes":
@@ -196,6 +182,14 @@ class MainMenu:
                         return "settings_updated"
                     return action
 
+        if event.type == pygame.KEYDOWN and self.input_active:
+            if event.key == pygame.K_BACKSPACE:
+                self.player_name = self.player_name[:-1]
+            elif event.key == pygame.K_RETURN:
+                self.input_active = False
+            elif len(self.player_name) < 15:
+                self.player_name += event.unicode
+
         if (
             event.type == pygame.MOUSEMOTION
             and pygame.mouse.get_pressed()[0]
@@ -203,7 +197,6 @@ class MainMenu:
             and self.slider_rect.collidepoint(event.pos)
         ):
             self._update_volume(event.pos[0])
-
         return None
 
     def _update_volume(self, mouse_x: int) -> None:
@@ -218,7 +211,6 @@ class MainMenu:
             nxt = self.backgrounds[self.next_idx].copy()
             nxt.set_alpha(self.alpha)
             self.screen.blit(nxt, (0, 0))
-
         if self.panel_y > -self.screen_rect.height:
             active = self.menu_state if self.menu_state != "MAIN" else self.last_state
             if active == "SETTINGS":
@@ -227,7 +219,6 @@ class MainMenu:
                 self.screen.blit(ov, (0, int(self.panel_y)))
             elif self.play_bg:
                 self.screen.blit(self.play_bg, (0, int(self.panel_y)))
-
         m_pos = pygame.mouse.get_pos()
         if self.menu_state == "MAIN" and self.panel_y <= -self.screen_rect.height:
             self.screen.blit(
@@ -268,10 +259,13 @@ class MainMenu:
             (self.screen_rect.centerx - 80, top + off_y),
         )
         rect = pygame.Rect(self.screen_rect.centerx - 180, top + 50 + off_y, 360, 55)
-        pygame.draw.rect(self.screen, (20, 20, 30), rect)
-        pygame.draw.rect(
-            self.screen, HOVER_COLOR if rect.collidepoint(m_pos) else WHITE, rect, 2
+        border = (
+            (255, 255, 0)
+            if self.input_active
+            else (HOVER_COLOR if rect.collidepoint(m_pos) else WHITE)
         )
+        pygame.draw.rect(self.screen, (20, 20, 30), rect)
+        pygame.draw.rect(self.screen, border, rect, 2)
         txt = self.font_button.render(val, True, WHITE)
         self.screen.blit(txt, txt.get_rect(center=rect.center))
         self.input_field_rect = rect
@@ -289,7 +283,6 @@ class MainMenu:
                 r.centerx, r.y = self.screen_rect.centerx, b["pos_y"] + off_y
             else:
                 r.x, r.y = self.left_margin, b["pos_y"]
-
             hov = r.collidepoint(m_pos)
             s = pygame.Surface((r.width, r.height), pygame.SRCALPHA)
             s.fill(BUTTON_BG)
