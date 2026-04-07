@@ -10,6 +10,7 @@ from .network_core import NetworkCore
 from .payloads import (
     GameState,
     PayloadTypes,
+    ReadyType,
     build_attack_payload,
     build_connection_status_payload,
     build_lost_payload,
@@ -46,8 +47,8 @@ class NetworkClient(NetworkCore):
         self.connected = False
         self.client.close()
 
-    def ready(self, name: str) -> None:
-        self.send(build_ready_payload(name))
+    def ready(self, name: str, ready_type: ReadyType) -> None:
+        self.send(build_ready_payload(name, ready_type))
 
     def send_attack_info(
         self, row: int, column: int, sender: str, receiver: str
