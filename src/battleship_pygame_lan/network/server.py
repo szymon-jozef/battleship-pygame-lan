@@ -8,6 +8,7 @@ from battleship_pygame_lan.logic import ShotResult
 from .models import GameState, NetworkPlayer, PayloadTypes
 from .network_core import NetworkCore
 from .payloads import (
+    build_game_over_payload,
     build_game_state_payload,
     build_start_payload,
 )
@@ -44,7 +45,34 @@ class NetworkServer(NetworkCore):
             thread.start()
             logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
-    def broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
+    def start_game(
+        self,
+    ) -> None:
+        """
+        Method for handling the game start.
+        It broadcasts the game was started
+        """
+        logger.info("[SERVER] The game is starting!")
+        payload = build_start_payload()
+        self._broadcast(payload)
+
+    def end_game(self) -> None:
+        """
+        Method for broadcasting the game has finished.
+        """
+        logger.info("[Server] The game has finished!")
+        payload = build_game_over_payload()
+        self._broadcast(payload)
+
+    def change_game_state(self, game_state: GameState) -> None:
+        """
+        Broadcast game state to every player
+        """
+        logger.info(f"[Server] We're changing the game state to {game_state.value}")
+        payload = build_game_state_payload(game_state)
+        self._broadcast(payload)
+
+    def _broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
         """
         Send message to every connected client
         """
@@ -62,7 +90,7 @@ class NetworkServer(NetworkCore):
                     f"Error while broadcasting to: {player.conn}\n\nError: {e}"
                 )
 
-    def route(self, msg: str, receiver: str) -> None:
+    def _route(self, msg: str, receiver: str) -> None:
         """
         Route the message to receiver
         """
@@ -81,23 +109,6 @@ class NetworkServer(NetworkCore):
             logger.warning(
                 f"[Server] Could not route the message. Receiver {receiver} not found"
             )
-
-    def start_game(self) -> None:
-        """
-        Method for handling the game start.
-        It broadcasts the game was started
-        """
-        logger.info("[SERVER] The game is starting!")
-        payload = build_start_payload()
-        self.broadcast(payload)
-
-    def change_game_state(self, game_state: GameState) -> None:
-        """
-        Broadcast game state to every player
-        """
-        logger.info(f"[Server] We're changing the game state to {game_state.value}")
-        payload = build_game_state_payload(game_state)
-        self.broadcast(payload)
 
     def _handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         """
@@ -164,7 +175,7 @@ class NetworkServer(NetworkCore):
         receiver: str | None = payload_data.get("receiver")
         sender: str | None = payload_data.get("sender")
         if receiver:
-            self.route(msg, receiver)
+            self._route(msg, receiver)
         logger.info(f"[Server] {sender} attacked {receiver}!")
 
     def _handle_shot_result(self, payload_data: dict, msg: str) -> None:
@@ -183,7 +194,7 @@ class NetworkServer(NetworkCore):
             and self.current_game_state == GameState.WAR
             and shot_result != ShotResult.AlreadyShot
         ):
-            self.route(msg, attacker)
+            self._route(msg, attacker)
             self._switch_turn()
             logger.info(
                 f"[Server] {attacker} attack info was sent back to "
