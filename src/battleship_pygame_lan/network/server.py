@@ -13,6 +13,7 @@ from .payloads import (
     build_end_game_payload,
     build_game_state_payload,
     build_start_game_payload,
+    build_turn_payload,
 )
 
 logger = logging.getLogger(__name__)
@@ -97,8 +98,8 @@ class NetworkServer(NetworkCore):
                 )
                 bad_msg = build_connection_status_payload("Unknown", False)
                 self.send_to_socket(conn, bad_msg)
-                suppress(Exception)
-                conn.close()
+                with suppress(Exception):
+                    conn.close()
                 return
 
         logger.info(f"[NEW CONNECTION] {addr} connected")
@@ -116,8 +117,14 @@ class NetworkServer(NetworkCore):
                     connected = False
                     break
 
-                msg_length: int = int(msg_length_str)
-                msg: str = conn.recv(msg_length).decode(self.FORMAT)
+                try:
+                    msg_length: int = int(msg_length_str)
+                    msg: str = conn.recv(msg_length).decode(self.FORMAT)
+                except ValueError as e:
+                    logger.warning(f"[Server] couldn't get message length: {e}")
+                    # connection is broken here, so we say bye bye
+                    connected = False
+                    break
 
                 logger.info(f"[{addr}] {msg}")
                 connected = self._handle_incoming_message(msg, current_player)
@@ -179,9 +186,21 @@ class NetworkServer(NetworkCore):
     def _handle_attack(self, payload_data: dict, msg: str) -> None:
         receiver: str | None = payload_data.get("receiver")
         sender: str | None = payload_data.get("sender")
+        if not self.current_turn:
+            logger.warning(
+                f"[Server] {sender} tried to attack, but current turn wasn't specified"
+            )
+            return
+
+        if self.current_turn.player_name != sender:
+            logger.warning(
+                f"[Server] {sender} tried to attack {receiver}, but it wasn't his turn!"
+            )
+            return
+
         if receiver:
             self._route(msg, receiver)
-        logger.info(f"[Server] {sender} attacked {receiver}!")
+            logger.info(f"[Server] {sender} attacked {receiver}!")
 
     def _handle_shot_result(self, payload_data: dict, msg: str) -> None:
         attacker: str | None = payload_data.get("receiver")
@@ -215,6 +234,12 @@ class NetworkServer(NetworkCore):
             if player in self.players:
                 self.players.remove(player)
         player.conn.close()
+        if player.player_name and self.current_game_state in (
+            GameState.SHIP_PLACEMENT,
+            GameState.WAR,
+        ):
+            payload = build_end_game_payload(player.player_name)
+            self._broadcast(payload)
         logger.info(f"[Server] {player.addr} disconnected and cleaned up")
 
     def _handle_player_lobby_ready(self, current_player: NetworkPlayer) -> None:
@@ -275,11 +300,16 @@ class NetworkServer(NetworkCore):
         Private method for switching turn.
         Pretty self-explanatory, if I do say so myself
         """
+        player_name: str | None = None
         with self.players_lock:
             for player in self.players:
-                if player != self.current_turn:
+                if player != self.current_turn and player.player_name:
                     self.current_turn = player
+                    player_name = player.player_name
                     break
+        if player_name:
+            payload = build_turn_payload(player_name)
+            self._broadcast(payload)
 
     def _start_game(
         self,

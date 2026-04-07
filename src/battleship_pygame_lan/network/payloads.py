@@ -136,3 +136,10 @@ def build_game_state_payload(current_game_state: GameState) -> str:
     Payload the server sends to the players, saying what game state are we in
     """
     return dumps({"type": PayloadTypes.GAME_STATE, "state": current_game_state.name})
+
+
+def build_turn_payload(player: str) -> str:
+    """
+    Payload the server sends to the players, when the turn switches
+    """
+    return dumps({"type": PayloadTypes.CHANGE_TURN, "turn": player})

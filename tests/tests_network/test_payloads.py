@@ -103,3 +103,11 @@ def test_building_payloads_game_state() -> None:
     game_state_dict = json.loads(game_state_payload)
     expected_game_state = {"type": "game_state", "state": state.name}
     assert game_state_dict == expected_game_state
+
+
+def test_building_payloads_turn() -> None:
+    player: str = "morbius"
+    turn_payload: str = payloads.build_turn_payload(player)
+    turn_dict: dict = json.loads(turn_payload)
+    expected_turn: dict = {"type": "change_turn", "turn": player}
+    assert turn_dict == expected_turn

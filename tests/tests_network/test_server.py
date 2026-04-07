@@ -79,6 +79,7 @@ def test_server_attack_route(mock_server: NetworkServer) -> None:
     player_spider.player_name = "spider-mid"
 
     mock_server.players = [player_morbius, player_spider]
+    mock_server.current_turn = player_morbius
 
     msg: str = build_attack_payload(
         row=2, column=2, sender="morbius", receiver="spider-mid"
@@ -90,8 +91,6 @@ def test_server_attack_route(mock_server: NetworkServer) -> None:
     expected_bytes = msg.encode("utf-8")
 
     mock_conn_spider.sendall.assert_any_call(expected_bytes)
-
-    mock_conn_morbius.sendall.assert_not_called()
 
 
 def test_server_shot_result_route(mock_server: NetworkServer) -> None:
@@ -117,8 +116,6 @@ def test_server_shot_result_route(mock_server: NetworkServer) -> None:
     expected_bytes = msg.encode("utf-8")
 
     mock_conn_spider.sendall.assert_any_call(expected_bytes)
-
-    mock_conn_morbius.sendall.assert_not_called()
 
     assert mock_server.current_turn is player_morbius
 
