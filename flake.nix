@@ -104,6 +104,7 @@
             shellHook = ''
               unset PYTHONPATH
               export REPO_ROOT=$(git rev-parse --show-toplevel)
+              export LD_LIBRARY_PATH=${pkgs.libpulseaudio}/lib:$LD_LIBRARY_PATH
             '';
           };
         }
