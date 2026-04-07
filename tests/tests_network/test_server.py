@@ -1,3 +1,4 @@
+import json
 import socket
 from collections.abc import Generator
 from unittest.mock import MagicMock, patch
@@ -8,6 +9,7 @@ from battleship_pygame_lan.network import (
     NetworkClient,
     NetworkPlayer,
     NetworkServer,
+    build_attack_payload,
     build_end_game_payload,
     build_start_game_payload,
 )
@@ -56,6 +58,31 @@ def test_server_end_game(mock_server: NetworkServer) -> None:
 
     expected_paload: bytes = build_end_game_payload().encode("utf-8")
     mock_conn.sendall.assert_any_call(expected_paload)
+
+
+def test_server_attack_route(mock_server: NetworkServer) -> None:
+    mock_conn_morbius = MagicMock()
+    player_morbius = NetworkPlayer(mock_conn_morbius, addr=("127.0.0.1", 5001))
+    player_morbius.player_name = "morbius"
+
+    mock_conn_spider = MagicMock()
+    player_spider = NetworkPlayer(mock_conn_spider, addr=("127.0.0.2", 5002))
+    player_spider.player_name = "spider-mid"
+
+    mock_server.players = [player_morbius, player_spider]
+
+    msg: str = build_attack_payload(
+        row=2, column=2, sender="morbius", receiver="spider-mid"
+    )
+    payload_data: dict = json.loads(msg)
+
+    mock_server._handle_attack(payload_data, msg)
+
+    expected_bytes = msg.encode("utf-8")
+
+    mock_conn_spider.sendall.assert_any_call(expected_bytes)
+
+    mock_conn_morbius.sendall.assert_not_called()
 
 
 def test_server_reject_conn_full(mock_server: NetworkServer) -> None:
