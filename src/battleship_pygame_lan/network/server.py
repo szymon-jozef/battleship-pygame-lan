@@ -190,7 +190,11 @@ class NetworkServer(NetworkCore):
             logger.error(f"[Server] Invliad or missing shot result: {result_raw}")
 
         if result_raw:
-            shot_result: ShotResult = ShotResult[result_raw]
+            try:
+                shot_result: ShotResult = ShotResult[result_raw]
+            except KeyError:
+                logger.error(f"[Server] Got invalid key: {result_raw}.")
+                return
 
         if (
             self.current_turn is not None
