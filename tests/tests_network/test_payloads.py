@@ -63,12 +63,10 @@ def test_building_payloads_game_start() -> None:
 
 
 def test_building_payloads_game_end() -> None:
-    game_end_json_str = payloads.build_end_game_payload()
+    name: str = "morbius"
+    game_end_json_str = payloads.build_end_game_payload(name)
     game_end_dict = json.loads(game_end_json_str)
-    expected_game_end = {
-        "type": "game_end",
-        "over": True,
-    }
+    expected_game_end = {"type": "game_end", "over": True, "loser": name}
     assert game_end_dict == expected_game_end
 
 
