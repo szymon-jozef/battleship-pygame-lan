@@ -4,7 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from battleship_pygame_lan.network import NetworkClient, NetworkPlayer, NetworkServer
+from battleship_pygame_lan.network import (
+    NetworkClient,
+    NetworkPlayer,
+    NetworkServer,
+    build_start_payload,
+)
 
 
 @pytest.fixture
@@ -28,6 +33,17 @@ def mock_server(mock_socket: MagicMock) -> NetworkServer:
 def test_server_initialization(mock_server: NetworkServer) -> None:
     assert mock_server.MAX_PLAYERS == 2
     assert len(mock_server.players) == 0
+
+
+def test_server_start_game(mock_server: NetworkServer) -> None:
+    mock_conn = MagicMock()
+    mock_player = NetworkPlayer(mock_conn, addr=("127.0.0.2", 5001))
+    mock_server.players = [mock_player]
+
+    mock_server.start_game()
+
+    expected_paload: bytes = build_start_payload().encode("utf-8")
+    mock_conn.sendall.assert_any_call(expected_paload)
 
 
 def test_server_reject_conn_full(mock_server: NetworkServer) -> None:
