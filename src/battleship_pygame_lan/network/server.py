@@ -2,12 +2,14 @@ import json
 import logging
 import socket
 import threading
+from contextlib import suppress
 
 from battleship_pygame_lan.logic import ShotResult
 
 from .models import GameState, NetworkPlayer, PayloadTypes, ReadyType
 from .network_core import NetworkCore
 from .payloads import (
+    build_connection_status_payload,
     build_end_game_payload,
     build_game_state_payload,
     build_start_game_payload,
@@ -93,6 +95,9 @@ class NetworkServer(NetworkCore):
                 logger.info(
                     f"[Server] client at {addr} tried to connect, but server is full"
                 )
+                bad_msg = build_connection_status_payload("Unknown", False)
+                self.send_to_socket(conn, bad_msg)
+                suppress(Exception)
                 conn.close()
                 return
 
@@ -115,40 +120,49 @@ class NetworkServer(NetworkCore):
                 msg: str = conn.recv(msg_length).decode(self.FORMAT)
 
                 logger.info(f"[{addr}] {msg}")
+                connected = self._handle_incoming_message(msg, current_player)
 
-                try:
-                    payload_data = json.loads(msg)
-                    payload_type = payload_data.get("type")
-
-                    match payload_type:
-                        case PayloadTypes.CONNECTION_STATUS.value:
-                            if not bool(payload_data.get("status")):
-                                break
-                        case PayloadTypes.READY.value:
-                            player_name = payload_data.get("player_name")
-                            if player_name:
-                                current_player.player_name = str(player_name)
-                            ready_type: ReadyType = ReadyType(
-                                payload_data.get("ready_type")
-                            )
-                            self._handle_player_ready(player_name, ready_type)
-
-                        case PayloadTypes.ATTACK.value:
-                            self._handle_attack(payload_data, msg)
-                        case PayloadTypes.SHOT_RESULT.value:
-                            self._handle_shot_result(payload_data, msg)
-                        case PayloadTypes.LOST.value:
-                            loser: str = payload_data.get("loser")
-                            self._end_game(loser)
-                        case _:
-                            pass
-
-                except json.JSONDecodeError:
-                    logger.error(f"[Server] Weird json from: {addr}")
             except OSError:
                 logger.error(f"[Server] Critical error from: {addr}")
                 break
         self._handle_player_cleanup(current_player)
+
+    def _handle_incoming_message(self, msg: str, current_player: NetworkPlayer) -> bool:
+        try:
+            payload_data = json.loads(msg)
+            payload_type = payload_data.get("type")
+        except json.JSONDecodeError:
+            logger.error(f"[Server] Weird json from: {current_player.addr}")
+            return True
+
+        match payload_type:
+            case PayloadTypes.CONNECTION_STATUS.value:
+                if not bool(payload_data.get("status")):
+                    return False
+            case PayloadTypes.READY.value:
+                player_name = payload_data.get("player_name")
+                if player_name:
+                    current_player.player_name = str(player_name)
+                try:
+                    ready_type: ReadyType = ReadyType(payload_data.get("ready_type"))
+                    self._handle_player_ready(current_player, ready_type)
+                except ValueError:
+                    logger.error(
+                        "[Server] Invalid ready_type received from "
+                        f"{current_player.addr}"
+                    )
+
+            case PayloadTypes.ATTACK.value:
+                self._handle_attack(payload_data, msg)
+            case PayloadTypes.SHOT_RESULT.value:
+                self._handle_shot_result(payload_data, msg)
+            case PayloadTypes.LOST.value:
+                loser: str = payload_data.get("loser")
+                self._end_game(loser)
+            case _:
+                pass
+
+        return True
 
     def _handle_player_ready(
         self, current_player: NetworkPlayer, ready_type: ReadyType
