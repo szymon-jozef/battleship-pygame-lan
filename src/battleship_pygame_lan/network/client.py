@@ -46,6 +46,8 @@ class NetworkClient(NetworkCore):
         receive_thread: Thread = Thread(target=self.receive, daemon=True)
         receive_thread.start()
 
+    # TODO! place_ship method
+
     def disconnect(self) -> None:
         self.send(build_connection_status_payload(self.player_name, False))
         self.connected = False
