@@ -120,7 +120,6 @@ class NetworkServer(NetworkCore):
                     payload_data = json.loads(msg)
                     payload_type = payload_data.get("type")
 
-                    # TODO! handle other payload types
                     match payload_type:
                         case PayloadTypes.CONNECTION_STATUS.value:
                             if not bool(payload_data.get("status")):
@@ -134,8 +133,9 @@ class NetworkServer(NetworkCore):
                             self._handle_attack(payload_data, msg)
                         case PayloadTypes.SHOT_RESULT.value:
                             self._handle_shot_result(payload_data, msg)
-                        case PayloadTypes.LOST:
-                            pass
+                        case PayloadTypes.LOST.value:
+                            loser: str = payload_data.get("loser")
+                            self._end_game(loser)
                         case _:
                             pass
 
@@ -242,13 +242,15 @@ class NetworkServer(NetworkCore):
         self.current_game_state = GameState.SHIP_PLACEMENT
         self._change_game_state(self.current_game_state)
 
-    def _end_game(self) -> None:
+    def _end_game(self, loser: str) -> None:
         """
         Private method for broadcasting the game has finished.
         """
         logger.info("[Server] The game has finished!")
-        payload = build_end_game_payload()
+        payload = build_end_game_payload(loser)
         self._broadcast(payload)
+        self.current_game_state = GameState.FINISH
+        self._change_game_state(self.current_game_state)
 
     def _change_game_state(self, game_state: GameState) -> None:
         """

@@ -110,11 +110,11 @@ def build_start_game_payload(start: bool = True) -> str:
     return dumps({"type": PayloadTypes.GAME_START, "start": start})
 
 
-def build_end_game_payload(over: bool = True) -> str:
+def build_end_game_payload(loser: str, over: bool = True) -> str:
     """
-    Payload server sends to the player, saying the game was has ended
+    Payload server sends to the player, saying the game has ended
     """
-    return dumps({"type": PayloadTypes.GAME_END, "over": over})
+    return dumps({"type": PayloadTypes.GAME_END, "loser": loser, "over": over})
 
 
 def build_lost_payload(player_name: str) -> str:
