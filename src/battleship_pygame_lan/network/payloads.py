@@ -107,21 +107,21 @@ def build_start_game_payload(start: bool = True) -> str:
     """
     Payload server sends to the players, saying it's time to start the game
     """
-    return dumps({"type": PayloadTypes.START, "start": start})
-
-
-def build_end_payload(player_name: str, end: bool = True) -> str:
-    """
-    Payload player sends to the server, saying he lost all ships
-    """
-    return dumps({"type": PayloadTypes.END, "end": end, "player_name": player_name})
+    return dumps({"type": PayloadTypes.GAME_START, "start": start})
 
 
 def build_end_game_payload(over: bool = True) -> str:
     """
     Payload server sends to the player, saying the game was has ended
     """
-    return dumps({"type": PayloadTypes.GAME_OVER, "over": over})
+    return dumps({"type": PayloadTypes.GAME_END, "over": over})
+
+
+def build_lost_payload(player_name: str) -> str:
+    """
+    Payload player sends to the server, saying he lost all ships
+    """
+    return dumps({"type": PayloadTypes.LOST, "player_name": player_name})
 
 
 def build_game_state_payload(current_game_state: GameState) -> str:

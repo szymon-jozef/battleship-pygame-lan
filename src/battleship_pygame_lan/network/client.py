@@ -12,7 +12,7 @@ from .payloads import (
     PayloadTypes,
     build_attack_payload,
     build_connection_status_payload,
-    build_end_payload,
+    build_lost_payload,
     build_ready_payload,
     build_shot_result_payload,
 )
@@ -60,7 +60,7 @@ class NetworkClient(NetworkCore):
         self.send(build_shot_result_payload(row, column, shot_result, sender, receiver))
 
     def end(self, player_name: str) -> None:
-        self.send(build_end_payload(player_name))
+        self.send(build_lost_payload(player_name))
 
     def send(self, msg: str) -> None:
         self.send_to_socket(self.client, msg)

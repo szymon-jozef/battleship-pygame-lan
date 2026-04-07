@@ -52,36 +52,35 @@ def test_building_payloads_ready() -> None:
     assert ready_dict == expected_ready
 
 
-def test_building_payloads_start() -> None:
+def test_building_payloads_game_start() -> None:
     start_json_str = payloads.build_start_game_payload()
     start_dict = json.loads(start_json_str)
     expected_start = {
-        "type": "start",
+        "type": "game_start",
         "start": True,
     }
     assert start_dict == expected_start
-
-
-def test_building_payloads_end() -> None:
-    gamer: str = "spider-mid"
-    end_json_str = payloads.build_end_payload(gamer)
-    end_dict = json.loads(end_json_str)
-    expected_end = {
-        "type": "end",
-        "end": True,
-        "player_name": gamer,
-    }
-    assert end_dict == expected_end
 
 
 def test_building_payloads_game_end() -> None:
     game_end_json_str = payloads.build_end_game_payload()
     game_end_dict = json.loads(game_end_json_str)
     expected_game_end = {
-        "type": "game_over",
+        "type": "game_end",
         "over": True,
     }
     assert game_end_dict == expected_game_end
+
+
+def test_building_payloads_lost() -> None:
+    gamer: str = "spider-mid"
+    end_json_str = payloads.build_lost_payload(gamer)
+    end_dict = json.loads(end_json_str)
+    expected_end = {
+        "type": "lost",
+        "player_name": gamer,
+    }
+    assert end_dict == expected_end
 
 
 def test_building_payloads_game_state() -> None:
