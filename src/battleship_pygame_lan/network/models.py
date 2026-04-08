@@ -1,0 +1,56 @@
+import socket
+from dataclasses import dataclass
+from enum import Enum, StrEnum, auto
+
+
+@dataclass
+class NetworkPlayer:
+    conn: socket.socket
+    addr: tuple[str, int]
+    player_name: str | None = None
+    ready_status: bool = False
+
+
+class GameState(Enum):
+    LOBBY = auto()
+    SHIP_PLACEMENT = auto()
+    WAR = auto()
+    FINISH = auto()
+
+
+class PayloadTypes(StrEnum):
+    """
+    Enum representing types a payload can send
+
+    Values:
+        CONNECTION_STATUS -  current connection status (bool, True when connected)
+        ATTACK - used when you want to attack someone
+        SHOT_RESULT - used when you were attacked
+        READY - used to signal that you're ready to play
+        GAME_START - used by the server to say that the game is about to start
+        GAME_END - used by the server to say that the game has ended
+        LOST - used when you lost all ships
+        GAME_STATE - used by the server to indicate current game state
+        CHANGE_TURN - used by the server to say which turn is it
+        PLAYER_NAMES - used to say who is connected to the server
+    """
+
+    CONNECTION_STATUS = "connection_status"
+    ATTACK = "attack"
+    SHOT_RESULT = "shot_result"
+    READY = "ready"
+    GAME_START = "game_start"
+    GAME_END = "game_end"
+    LOST = "lost"
+    GAME_STATE = "game_state"
+    CHANGE_TURN = "change_turn"
+    PLAYER_NAMES = "player_names"
+
+
+class ReadyType(StrEnum):
+    """
+    Enum representing the type of readiness player wants to show
+    """
+
+    LOBBY = "lobby_ready"
+    SHIP_PLACED = "ship_placed"

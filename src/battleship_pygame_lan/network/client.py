@@ -1,0 +1,137 @@
+import json
+import socket
+from logging import getLogger
+from queue import Queue
+from threading import Thread
+
+from battleship_pygame_lan.logic import ShotResult
+
+from .network_core import NetworkCore
+from .payloads import (
+    GameState,
+    PayloadTypes,
+    ReadyType,
+    build_attack_payload,
+    build_connection_status_payload,
+    build_lost_payload,
+    build_ready_payload,
+    build_shot_result_payload,
+)
+
+logger = getLogger(__name__)
+
+
+class NetworkClient(NetworkCore):
+    def __init__(
+        self,
+        player_name: str,
+        server_ip: str = socket.gethostbyname(socket.gethostname()),
+    ) -> None:
+        super().__init__(ip_address=server_ip)
+
+        self.player_name: str = player_name
+        self.enemy_name: str | None = None
+        self.message_queue: Queue = Queue()
+        self.connected: bool = False
+        self.is_my_turn: bool = False
+        self.current_game_state: GameState | None = None
+
+    def connect(self) -> None:
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.connect(self.ADDR)
+        self.connected = True
+
+        receive_thread: Thread = Thread(target=self.receive, daemon=True)
+        receive_thread.start()
+
+        self.send(build_connection_status_payload(self.player_name, True))
+
+    def disconnect(self) -> None:
+        self.send(build_connection_status_payload(self.player_name, False))
+        self.connected = False
+        self.client.close()
+
+    def ready(self, ready_type: ReadyType) -> None:
+        self.send(build_ready_payload(self.player_name, ready_type))
+
+    def send_attack_info(self, row: int, column: int) -> None:
+        if self.is_my_turn and self.enemy_name:
+            self.send(
+                build_attack_payload(row, column, self.player_name, self.enemy_name)
+            )
+
+    def send_shot_result(self, row: int, column: int, shot_result: ShotResult) -> None:
+        if self.enemy_name:
+            self.send(
+                build_shot_result_payload(
+                    row, column, shot_result, self.player_name, self.enemy_name
+                )
+            )
+
+    def end(self) -> None:
+        self.send(build_lost_payload(self.player_name))
+
+    def send(self, msg: str) -> None:
+        self.send_to_socket(self.client, msg)
+
+    def receive(self) -> None:
+        while self.connected:
+            try:
+                header: bytes = self.client.recv(self.HEADER)
+
+                if not header:
+                    logger.info("[Client] Connection closed by the server.")
+                    self.connected = False
+                    break
+
+                msg_length_str: str = header.decode(self.FORMAT).strip()
+                if msg_length_str:
+                    msg_len: int = int(msg_length_str)
+                    msg: str = self.client.recv(msg_len).decode(self.FORMAT)
+
+                    logger.info("[Client] Got new message!")
+                    logger.debug(f"[Client] Message: {msg}")
+
+                    try:
+                        payload_data: dict = json.loads(msg)
+                        payload_type = payload_data.get("type")
+
+                        match payload_type:
+                            case PayloadTypes.CONNECTION_STATUS.value:
+                                if not bool(payload_data.get("status")):
+                                    logger.info(
+                                        "[Client] Server wanted to disconnect, so "
+                                        "disconnecting... :("
+                                    )
+                                    self.connected = False
+                                    break
+                            case PayloadTypes.PLAYER_NAMES:
+                                players = payload_data.get("players")
+                                if players:
+                                    for player in players:
+                                        if player != self.player_name:
+                                            self.enemy_name = player
+                            case PayloadTypes.GAME_STATE.value:
+                                state = payload_data.get("state")
+                                self.current_game_state = (
+                                    GameState[state] if state else None
+                                )
+                            case PayloadTypes.CHANGE_TURN.value:
+                                turn = payload_data.get("turn")
+                                self.is_my_turn = turn == self.player_name
+                                self.message_queue.put(payload_data)
+                            case _ if payload_type in [
+                                e.value for e in PayloadTypes
+                            ]:  # we put every other PayloadType on the queue
+                                self.message_queue.put(payload_data)
+                            case _:
+                                # and ignore everything else
+                                logger.error(
+                                    f"[Client] Unrecognized data: {payload_data}"
+                                )
+                    except json.JSONDecodeError:
+                        logger.error("[Client] got weird json")
+            except OSError as e:
+                logger.error(f"[Client] Connection error in receive: {e}")
+                self.connected = False
+                break

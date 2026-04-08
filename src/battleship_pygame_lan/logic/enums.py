@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class ShipType(Enum):
@@ -41,7 +41,7 @@ class ShotResult(Enum):
         AlreadyShot
     """
 
-    Miss = 1
-    Hit = 2
-    Sunk = 3
-    AlreadyShot = 4
+    Miss = auto()
+    Hit = auto()
+    Sunk = auto()
+    AlreadyShot = auto()
