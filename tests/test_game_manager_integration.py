@@ -126,9 +126,11 @@ def test_full_game_flow() -> None:
 
     assert not passive_gm.gui_events_queue.empty(), "GUI queue is empty!"
 
-    # this should be a hit
-    gui_event = passive_gm.gui_events_queue.get()
-    assert gui_event == GuiEvent.ShotHit, f"Expected Hit or Miss, got {gui_event}"
+    # this should be a win!
+    events: list[GuiEvent] = []
+    while not passive_gm.gui_events_queue.empty():
+        events.append(passive_gm.gui_events_queue.get())
+    assert GuiEvent.GameWon in events, f"Expected GameWon, got {gui_event}"
 
     # morbius lost
     # TODO! check for this

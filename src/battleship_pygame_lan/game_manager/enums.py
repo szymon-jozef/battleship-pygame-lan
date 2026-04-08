@@ -11,3 +11,5 @@ class GuiEvent(Enum):
     ShotHit = auto()
     ShotMissed = auto()
     ShotMarked = auto()
+    GameLost = auto()
+    GameWon = auto()

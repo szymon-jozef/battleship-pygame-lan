@@ -89,6 +89,8 @@ class GameManager:
                     self._handle_shot(message)
                 case PayloadTypes.SHOT_RESULT.value:
                     self._handle_shot_result(message)
+                case PayloadTypes.GAME_END.value:
+                    self._handle_game_end(message)
                 case _:  # we pass for now
                     pass
 
@@ -120,10 +122,19 @@ class GameManager:
             self.network_client.send_shot_result(row, column, ShotResult.AlreadyShot)
             return
 
-        if field_state == FieldState.Taken:
-            self.network_client.send_shot_result(row, column, ShotResult.Hit)
-        else:
-            self.network_client.send_shot_result(row, column, ShotResult.Miss)
+        result = ShotResult.Hit if FieldState.Hit == field_state else ShotResult.Miss
+        self.network_client.send_shot_result(row, column, result)
+
+        if self.player.is_dead:
+            logger.info("[GameManager] Player is dead :(")
+            self.network_client.end()
+            self.gui_events_queue.put(GuiEvent.GameLost)
+
+    def _handle_game_end(self, message: dict) -> None:
+        loser: str = str(message.get("loser"))
+        if loser != self.player.name:
+            self.gui_events_queue.put(GuiEvent.GameWon)
+        self.network_client.disconnect()
 
     def _handle_shot_result(self, message: dict) -> None:
         row_content = message.get("row")
