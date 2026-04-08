@@ -25,7 +25,7 @@ def test_client_server_connection_and_ready_flow() -> None:
 
     time.sleep(0.1)
 
-    TEST_PORT = server.server.getsockname()[1]
+    TEST_PORT = server.server.getsockname()[1]  # get opened port
 
     client1_name = "Morbius"
     client1 = NetworkClient(player_name=client1_name, server_ip=TEST_IP)
@@ -49,18 +49,19 @@ def test_client_server_connection_and_ready_flow() -> None:
     assert server.players[0].addr == client1.client.getsockname()
     assert server.players[1].addr == client2.client.getsockname()
 
-    # READY
+    # both players are in the lobby and they press ready button
     client1.ready("Morbius", ReadyType.LOBBY)
     client2.ready("Spider-Mid", ReadyType.LOBBY)
 
     time.sleep(0.1)
 
-    # SHIP PLACEMENT
+    # both players have time to place their ships
     assert server.current_game_state == GameState.SHIP_PLACEMENT
 
     assert client1.current_game_state == GameState.SHIP_PLACEMENT
     assert client2.current_game_state == GameState.SHIP_PLACEMENT
 
+    # both players placed their ships
     client1.ready(client1_name, ReadyType.SHIP_PLACED)
     client2.ready(client2_name, ReadyType.SHIP_PLACED)
 
@@ -82,9 +83,11 @@ def test_client_server_connection_and_ready_flow() -> None:
     while not client2.message_queue.empty():
         client2.message_queue.get()
 
+    # morbius attacks!
     client1.send_attack_info(1, 1, client1_name, client2_name)
     time.sleep(0.1)
 
+    # spider mid responds
     attack_event = client2.message_queue.get(timeout=1.0)
     assert attack_event.get("type") == PayloadTypes.ATTACK.value
     assert attack_event.get("row") == 1
@@ -95,16 +98,27 @@ def test_client_server_connection_and_ready_flow() -> None:
     )
     time.sleep(0.1)
 
+    # morbius gets his response
     result_event = client1.message_queue.get(timeout=1.0)
     assert result_event.get("type") == PayloadTypes.SHOT_RESULT.value
     assert result_event.get("result") == ShotResult.Miss.name
 
+    # if above works then they can communicate about war
     turn_event = client1.message_queue.get(timeout=1.0)
     assert turn_event.get("type") == PayloadTypes.CHANGE_TURN.value
+    # now it's spider-mid turn
 
     assert client1.is_my_turn is False
     assert client2.is_my_turn is True
 
+    # spider-mid losses as he's MID!!!
+    client2.end(client2.player_name)
+
+    time.sleep(0.1)
+
+    assert server.current_game_state == GameState.FINISH
+
+    # both players disconnect
     client1.disconnect()
     client2.disconnect()
 

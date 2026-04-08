@@ -21,6 +21,8 @@ from .payloads import (
 logger = getLogger(__name__)
 
 
+# TODO refactor some methods so the user doesn't have to to stupid things like
+# self.method(self.name) as it's bad design :((
 class NetworkClient(NetworkCore):
     def __init__(
         self,
@@ -30,9 +32,7 @@ class NetworkClient(NetworkCore):
         super().__init__(ip_address=server_ip)
 
         self.player_name: str = player_name
-        self.enemy_name: str | None = (
-            None  # TODO! make new payload for the server and tell this
-        )
+        self.enemy_name: str | None = None
         self.message_queue: Queue = Queue()
         self.connected: bool = False
         self.is_my_turn: bool = False
@@ -47,8 +47,6 @@ class NetworkClient(NetworkCore):
         receive_thread.start()
 
         self.send(build_connection_status_payload(self.player_name, True))
-
-    # TODO! place_ship method
 
     def disconnect(self) -> None:
         self.send(build_connection_status_payload(self.player_name, False))
