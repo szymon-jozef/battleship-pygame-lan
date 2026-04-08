@@ -25,6 +25,7 @@ def client(mock_socket: socket.socket) -> NetworkClient:
 def test_client_send_success(client: NetworkClient, mock_socket: MagicMock) -> None:
     test_msg = "test_msg"
     client.connect()
+    mock_socket.sendall.reset_mock()
     client.send(test_msg)
 
     encoded_msg: bytes = test_msg.encode(client.FORMAT)

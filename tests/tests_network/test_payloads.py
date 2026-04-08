@@ -111,3 +111,16 @@ def test_building_payloads_turn() -> None:
     turn_dict: dict = json.loads(turn_payload)
     expected_turn: dict = {"type": "change_turn", "turn": player}
     assert turn_dict == expected_turn
+
+
+def test_building_payloads_players() -> None:
+    player1: str = "morbius"
+    player2: str = "spider-mid"
+    players: list[str] = [player1, player2]
+    players_json_str = payloads.build_players_payload(players)
+    players_dict = json.loads(players_json_str)
+    expected_players = {
+        "type": "player_names",
+        "players": players,
+    }
+    assert players_dict == expected_players

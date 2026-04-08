@@ -12,6 +12,7 @@ from .payloads import (
     build_connection_status_payload,
     build_end_game_payload,
     build_game_state_payload,
+    build_players_payload,
     build_start_game_payload,
     build_turn_payload,
 )
@@ -146,10 +147,11 @@ class NetworkServer(NetworkCore):
             case PayloadTypes.CONNECTION_STATUS.value:
                 if not bool(payload_data.get("status")):
                     return False
-            case PayloadTypes.READY.value:
                 player_name = payload_data.get("player_name")
                 if player_name:
                     current_player.player_name = str(player_name)
+                    self._broadcast_players()
+            case PayloadTypes.READY.value:
                 try:
                     ready_type: ReadyType = ReadyType(payload_data.get("ready_type"))
                     self._handle_player_ready(current_player, ready_type)
@@ -367,4 +369,11 @@ class NetworkServer(NetworkCore):
         """
         logger.info(f"[Server] We're changing the game state to {game_state.value}")
         payload = build_game_state_payload(game_state)
+        self._broadcast(payload)
+
+    def _broadcast_players(self) -> None:
+        with self.players_lock:
+            payload: str = build_players_payload(
+                [player.player_name for player in self.players if player.player_name]
+            )
         self._broadcast(payload)

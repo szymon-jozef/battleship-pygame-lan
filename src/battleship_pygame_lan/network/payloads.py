@@ -143,3 +143,10 @@ def build_turn_payload(player: str) -> str:
     Payload the server sends to the players, when the turn switches
     """
     return dumps({"type": PayloadTypes.CHANGE_TURN, "turn": player})
+
+
+def build_players_payload(players: list[str]) -> str:
+    """
+    Payloads the server sends when new player connects.
+    """
+    return dumps({"type": PayloadTypes.PLAYER_NAMES, "players": players})

@@ -32,6 +32,7 @@ class PayloadTypes(StrEnum):
         LOST - used when you lost all ships
         GAME_STATE - used by the server to indicate current game state
         CHANGE_TURN - used by the server to say which turn is it
+        PLAYER_NAMES - used to say who is connected to the server
     """
 
     CONNECTION_STATUS = "connection_status"
@@ -43,6 +44,7 @@ class PayloadTypes(StrEnum):
     LOST = "lost"
     GAME_STATE = "game_state"
     CHANGE_TURN = "change_turn"
+    PLAYER_NAMES = "player_names"
 
 
 class ReadyType(StrEnum):

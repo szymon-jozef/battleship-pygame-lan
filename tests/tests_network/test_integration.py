@@ -14,16 +14,18 @@ from battleship_pygame_lan.network import (
 def test_client_server_connection_and_ready_flow() -> None:
     # TODO keep this test updated
     TEST_IP = "127.0.0.1"
-    TEST_PORT = 12345
+    RANDOM_PORT = 0
 
     # SETUP
     server = NetworkServer(server_ip=TEST_IP)
-    server.ADDR = (TEST_IP, TEST_PORT)
+    server.ADDR = (TEST_IP, RANDOM_PORT)
 
     server_thread = Thread(target=server.start, daemon=True)
     server_thread.start()
 
     time.sleep(0.1)
+
+    TEST_PORT = server.server.getsockname()[1]
 
     client1_name = "Morbius"
     client1 = NetworkClient(player_name=client1_name, server_ip=TEST_IP)
@@ -34,6 +36,12 @@ def test_client_server_connection_and_ready_flow() -> None:
     client2 = NetworkClient(player_name=client2_name, server_ip=TEST_IP)
     client2.ADDR = (TEST_IP, TEST_PORT)
     client2.connect()
+
+    time.sleep(0.1)
+
+    # test if players know their enemies
+    assert client1.enemy_name == client2_name
+    assert client2.enemy_name == client1_name
 
     time.sleep(0.1)
 

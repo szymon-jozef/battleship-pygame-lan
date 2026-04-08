@@ -46,6 +46,8 @@ class NetworkClient(NetworkCore):
         receive_thread: Thread = Thread(target=self.receive, daemon=True)
         receive_thread.start()
 
+        self.send(build_connection_status_payload(self.player_name, True))
+
     # TODO! place_ship method
 
     def disconnect(self) -> None:
@@ -104,6 +106,12 @@ class NetworkClient(NetworkCore):
                                     )
                                     self.connected = False
                                     break
+                            case PayloadTypes.PLAYER_NAMES:
+                                players = payload_data.get("players")
+                                if players:
+                                    for player in players:
+                                        if player != self.player_name:
+                                            self.enemy_name = player
                             case PayloadTypes.GAME_STATE.value:
                                 state = payload_data.get("state")
                                 self.current_game_state = (
