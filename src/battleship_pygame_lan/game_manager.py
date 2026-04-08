@@ -10,7 +10,7 @@ from battleship_pygame_lan.logic import (
     Player,
     ShotResult,
 )
-from battleship_pygame_lan.network import NetworkClient, PayloadTypes
+from battleship_pygame_lan.network import GameState, NetworkClient, PayloadTypes
 
 logger = getLogger(__name__)
 
@@ -44,6 +44,10 @@ class GameManager:
 
     def connect(self) -> None:
         self.network_client.connect()
+
+    @property
+    def get_game_state(self) -> GameState | None:
+        return self.network_client.current_game_state
 
     def shoot(self, row: int, column: int) -> None:
         self.network_client.send_attack_info(row, column)
