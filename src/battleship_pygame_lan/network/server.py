@@ -222,14 +222,11 @@ class NetworkServer(NetworkCore):
             and self.current_turn.player_name == attacker
             and attacker
             and self.current_game_state == GameState.WAR
-            and shot_result != ShotResult.AlreadyShot
         ):
             self._route(msg, attacker)
-            self._switch_turn()
-            logger.info(
-                f"[Server] {attacker} attack info was sent back to "
-                "him. Changing turn..."
-            )
+            if shot_result != ShotResult.AlreadyShot:
+                self._switch_turn()
+                logger.info(f"[Server] {attacker} Changing turn...")
 
     def _handle_player_cleanup(self, player: NetworkPlayer) -> None:
         with self.players_lock:
@@ -242,6 +239,8 @@ class NetworkServer(NetworkCore):
         ):
             payload = build_end_game_payload(player.player_name)
             self._broadcast(payload)
+        else:
+            self._broadcast_players()
         logger.info(f"[Server] {player.addr} disconnected and cleaned up")
 
     def _handle_player_lobby_ready(self, current_player: NetworkPlayer) -> None:
