@@ -75,8 +75,8 @@ def test_full_game_flow() -> None:
     gm_morbius.handle_response()
     gm_venom.handle_response()
 
-    assert gm_morbius.get_game_state == GameState.SHIP_PLACEMENT
-    assert gm_venom.get_game_state == GameState.SHIP_PLACEMENT
+    assert gm_morbius.game_state == GameState.SHIP_PLACEMENT
+    assert gm_venom.game_state == GameState.SHIP_PLACEMENT
 
     # they place their ships
     gm_morbius.place_ship(ShipType.OneMaster, 5, 5)
@@ -90,8 +90,8 @@ def test_full_game_flow() -> None:
     gm_morbius.handle_response()
     gm_venom.handle_response()
 
-    assert gm_morbius.get_game_state == GameState.WAR
-    assert gm_venom.get_game_state == GameState.WAR
+    assert gm_morbius.game_state == GameState.WAR
+    assert gm_venom.game_state == GameState.WAR
 
     # they shoot at each other
 
