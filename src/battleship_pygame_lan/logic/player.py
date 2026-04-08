@@ -83,7 +83,7 @@ class Player:
 
     def receive_shot(self, row: int, column: int) -> ShotResult:
         logger.info(f"Player {self.name} received a shot at ({row}, {column})")
-        return self.board.shoot(row, column)
+        return self.player.receive_shot(row, column)
 
     @property
     def is_every_ship_placed(self) -> bool:

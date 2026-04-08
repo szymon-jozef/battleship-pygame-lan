@@ -4,7 +4,6 @@ from queue import Empty, Queue
 
 from battleship_pygame_lan.logic import (
     AlreadyShotError,
-    FieldState,
     OutOfBoundsError,
     Player,
     ShipType,
@@ -127,9 +126,8 @@ class GameManager:
         if coords is not None:
             row, column = coords
 
-        field_state: FieldState = self.player.get_own_board_state(row, column)
         try:
-            self.player.board.shoot(row, column)
+            shot_result: ShotResult = self.player.receive_shot(row, column)
         except OutOfBoundsError:
             logger.info("[GameManager] Enemy tried to shot out of bounds!")
             self.network_client.send_shot_result(row, column, ShotResult.OutOfBounds)
@@ -141,8 +139,7 @@ class GameManager:
             self.network_client.send_shot_result(row, column, ShotResult.AlreadyShot)
             return
 
-        result = ShotResult.Hit if FieldState.Hit == field_state else ShotResult.Miss
-        self.network_client.send_shot_result(row, column, result)
+        self.network_client.send_shot_result(row, column, shot_result)
 
         if self.player.is_dead:
             logger.info("[GameManager] Player is dead :(")
