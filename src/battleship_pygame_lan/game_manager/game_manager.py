@@ -55,9 +55,9 @@ class GameManager:
             message_type: PayloadTypes = PayloadTypes(message.get("type"))
 
             match message_type:
-                case PayloadTypes.ATTACK:
+                case PayloadTypes.ATTACK.value:
                     self._handle_shot(message)
-                case PayloadTypes.SHOT_RESULT:
+                case PayloadTypes.SHOT_RESULT.value:
                     self._handle_shot_result(message)
                 case _:  # we pass for now
                     pass
@@ -107,8 +107,8 @@ class GameManager:
             return
 
         try:
-            shot_result: ShotResult = ShotResult(message.get("result"))
-        except ValueError:
+            shot_result: ShotResult = ShotResult[str(message.get("result"))]
+        except KeyError:
             logger.info("[GameClient] weird key in shot_result in handle_shot_result()")
             return
         try:
