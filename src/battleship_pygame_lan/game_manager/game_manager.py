@@ -7,6 +7,7 @@ from battleship_pygame_lan.logic import (
     FieldState,
     OutOfBoundsError,
     Player,
+    ShipType,
     ShotResult,
 )
 from battleship_pygame_lan.network import GameState, NetworkClient, PayloadTypes
@@ -37,6 +38,35 @@ class GameManager:
     @property
     def get_game_state(self) -> GameState | None:
         return self.network_client.current_game_state
+
+    def place_ship(
+        self, ship_type: ShipType, row: int, column: int, horizontal: bool = True
+    ) -> bool:
+        """
+        Attempts to place a ship on the player's board.
+        First checks if the player has the requested ship type in their inventory.
+        If available, delegates the placement to the Board class.
+
+        Args:
+            ship_type (ShipType): The type and size of the ship to place.
+            row (int): The row of the ship's starting point.
+            column (int): The column of the ship's starting point.
+            horizontal (bool, optional): True for horizontal placement.
+            False for vertical (heading up).
+
+        Raises:
+            ValueError: If the player doesn't have enough ships of chosen type.
+            ValueError: If the ship is placed out of the board's boundaries (from Board)
+            ValueError: If the ship touches or overlaps another placed ship (from Board)
+            RuntimeError: If called when it's not GameState.SHIP_PLACEMENT
+
+        Returns:
+            bool: True if the ship was successfully placed and removed from inventory.
+        """
+        if self.network_client.current_game_state == GameState.SHIP_PLACEMENT:
+            return self.player.place_ship(ship_type, row, column, horizontal=True)
+        else:
+            raise RuntimeError("Tried to place a ship, when it's not the time for this")
 
     def shoot(self, row: int, column: int) -> None:
         self.network_client.send_attack_info(row, column)

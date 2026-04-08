@@ -130,6 +130,8 @@ class NetworkServer(NetworkCore):
         logger.info(f"[NEW CONNECTION] {addr} connected")
         current_player = NetworkPlayer(conn=conn, addr=addr)
         self.players.append(current_player)
+        if self.current_game_state is None:
+            self.current_game_state = GameState.LOBBY
 
         connected: bool = True
         while connected:
