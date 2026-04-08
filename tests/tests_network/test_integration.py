@@ -12,7 +12,6 @@ from battleship_pygame_lan.network import (
 
 
 def test_client_server_connection_and_ready_flow() -> None:
-    # TODO keep this test updated
     TEST_IP = "127.0.0.1"
     RANDOM_PORT = 0
 

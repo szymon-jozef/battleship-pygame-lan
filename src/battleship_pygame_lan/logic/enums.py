@@ -39,9 +39,11 @@ class ShotResult(Enum):
         Hit
         Sunk
         AlreadyShot
+        OutOfBounds
     """
 
     Miss = auto()
     Hit = auto()
     Sunk = auto()
     AlreadyShot = auto()
+    OutOfBounds = auto()
