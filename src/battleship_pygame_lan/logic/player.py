@@ -72,9 +72,9 @@ class Player:
 
         Important:
             This method only marks the field on the radar with shot_result value.
-            It doesn't validate anything.
-            Chosen row and column should be validated for repeated shots, before
-            shooting calling it this method
+        Raises:
+            OutOfBoundsError
+            AlreadyShotError
         """
         logger.info(
             f"Player {self.name} marked ({row}, {column}) as {shot_result} on his radar"
