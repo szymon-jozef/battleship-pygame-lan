@@ -21,8 +21,6 @@ from .payloads import (
 logger = getLogger(__name__)
 
 
-# TODO refactor some methods so the user doesn't have to to stupid things like
-# self.method(self.name) as it's bad design :((
 class NetworkClient(NetworkCore):
     def __init__(
         self,
@@ -53,22 +51,25 @@ class NetworkClient(NetworkCore):
         self.connected = False
         self.client.close()
 
-    def ready(self, name: str, ready_type: ReadyType) -> None:
-        self.send(build_ready_payload(name, ready_type))
+    def ready(self, ready_type: ReadyType) -> None:
+        self.send(build_ready_payload(self.player_name, ready_type))
 
-    def send_attack_info(
-        self, row: int, column: int, sender: str, receiver: str
-    ) -> None:
-        if self.is_my_turn:
-            self.send(build_attack_payload(row, column, sender, receiver))
+    def send_attack_info(self, row: int, column: int) -> None:
+        if self.is_my_turn and self.enemy_name:
+            self.send(
+                build_attack_payload(row, column, self.player_name, self.enemy_name)
+            )
 
-    def send_shot_result(
-        self, row: int, column: int, shot_result: ShotResult, sender: str, receiver: str
-    ) -> None:
-        self.send(build_shot_result_payload(row, column, shot_result, sender, receiver))
+    def send_shot_result(self, row: int, column: int, shot_result: ShotResult) -> None:
+        if self.enemy_name:
+            self.send(
+                build_shot_result_payload(
+                    row, column, shot_result, self.player_name, self.enemy_name
+                )
+            )
 
-    def end(self, player_name: str) -> None:
-        self.send(build_lost_payload(player_name))
+    def end(self) -> None:
+        self.send(build_lost_payload(self.player_name))
 
     def send(self, msg: str) -> None:
         self.send_to_socket(self.client, msg)

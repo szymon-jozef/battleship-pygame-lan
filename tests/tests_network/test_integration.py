@@ -50,8 +50,8 @@ def test_client_server_connection_and_ready_flow() -> None:
     assert server.players[1].addr == client2.client.getsockname()
 
     # both players are in the lobby and they press ready button
-    client1.ready("Morbius", ReadyType.LOBBY)
-    client2.ready("Spider-Mid", ReadyType.LOBBY)
+    client1.ready(ReadyType.LOBBY)
+    client2.ready(ReadyType.LOBBY)
 
     time.sleep(0.1)
 
@@ -62,8 +62,8 @@ def test_client_server_connection_and_ready_flow() -> None:
     assert client2.current_game_state == GameState.SHIP_PLACEMENT
 
     # both players placed their ships
-    client1.ready(client1_name, ReadyType.SHIP_PLACED)
-    client2.ready(client2_name, ReadyType.SHIP_PLACED)
+    client1.ready(ReadyType.SHIP_PLACED)
+    client2.ready(ReadyType.SHIP_PLACED)
 
     time.sleep(0.1)
 
@@ -84,7 +84,7 @@ def test_client_server_connection_and_ready_flow() -> None:
         client2.message_queue.get()
 
     # morbius attacks!
-    client1.send_attack_info(1, 1, client1_name, client2_name)
+    client1.send_attack_info(1, 1)
     time.sleep(0.1)
 
     # spider mid responds
@@ -93,9 +93,7 @@ def test_client_server_connection_and_ready_flow() -> None:
     assert attack_event.get("row") == 1
     assert attack_event.get("column") == 1
 
-    client2.send_shot_result(
-        1, 1, ShotResult.Miss, sender=client2_name, receiver=client1_name
-    )
+    client2.send_shot_result(1, 1, ShotResult.Miss)
     time.sleep(0.1)
 
     # morbius gets his response
@@ -112,7 +110,7 @@ def test_client_server_connection_and_ready_flow() -> None:
     assert client2.is_my_turn is True
 
     # spider-mid losses as he's MID!!!
-    client2.end(client2.player_name)
+    client2.end()
 
     time.sleep(0.1)
 
