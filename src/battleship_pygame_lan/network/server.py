@@ -31,23 +31,47 @@ class NetworkServer(NetworkCore):
         self.players: list[NetworkPlayer] = []
         self.current_game_state: GameState | None = None
         self.current_turn: NetworkPlayer | None = None
+        self.is_running: bool = False
 
     def start(self) -> None:
         """
-        Method for starting the server. Needs to be run if you want to use the server!!!
+        Public method to start the server in blocking way, so preferably must be run in
+        separate thread.
         """
         logger.info("[STARTING] Server is starting")
         logger.info(f"[LISTENING] Server is listening on {self.HOST}")
 
         self.server.bind(self.ADDR)
         self.server.listen()
-        while True:
-            conn, addr = self.server.accept()
-            thread = threading.Thread(
-                target=self._handle_client, args=(conn, addr), daemon=True
-            )
-            thread.start()
-            logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+        self.is_running = True
+        try:
+            while self.is_running:
+                conn, addr = self.server.accept()
+                thread = threading.Thread(
+                    target=self._handle_client, args=(conn, addr), daemon=True
+                )
+                thread.start()
+                logger.info(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+        except OSError:
+            logger.info("[Server] Main socket closed. Stopping accept loop.")
+        finally:
+            logger.info("[Server] Server thread has finished working")
+
+    def stop(self) -> None:
+        """
+        Method for stopping the server safely.
+        It disconnects all the players before shutting down.
+        """
+        self.is_running = False
+        logger.info("[Server] Initiating shutdown...")
+        with self.players_lock:
+            for player in self.players:
+                with suppress(Exception):
+                    player.conn.close()
+            self.players.clear()
+        with suppress(Exception):
+            self.server.close()
+        logger.info("[Server] Server shutdown complete")
 
     def _broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
         """

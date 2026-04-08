@@ -125,3 +125,6 @@ def test_client_server_connection_and_ready_flow() -> None:
     time.sleep(0.1)
 
     assert len(server.players) == 0
+
+    # close the server
+    server.stop()
