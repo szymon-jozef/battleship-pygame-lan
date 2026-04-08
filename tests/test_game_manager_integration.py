@@ -133,7 +133,6 @@ def test_full_game_flow() -> None:
     assert GuiEvent.GameWon in events, f"Expected GameWon, got {gui_event}"
 
     # morbius lost
-    # TODO! check for this
 
     gm_morbius.network_client.disconnect()
     gm_venom.network_client.disconnect()

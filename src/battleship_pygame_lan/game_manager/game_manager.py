@@ -21,6 +21,15 @@ class GameManager:
     """
     Manager class to handle Player on the logic layer and network client
     on the network layer.
+
+    It has it's own instances of all the classes.
+
+
+    Fields:
+        - player (Player)
+        - network_client (NetworkClient)
+        - gui_events_queue (Queue[GuiEvents]) queue of GuiEvents, should be constantly
+        checked for events
     """
 
     def __init__(
@@ -33,10 +42,13 @@ class GameManager:
         self.gui_events_queue: Queue[GuiEvent] = Queue()
 
     def connect(self) -> None:
+        """
+        Connect to the server. Must be run before game
+        """
         self.network_client.connect()
 
     @property
-    def get_game_state(self) -> GameState | None:
+    def game_state(self) -> GameState | None:
         return self.network_client.current_game_state
 
     def place_ship(
@@ -64,7 +76,7 @@ class GameManager:
             bool: True if the ship was successfully placed and removed from inventory.
         """
         if self.network_client.current_game_state == GameState.SHIP_PLACEMENT:
-            return self.player.place_ship(ship_type, row, column, horizontal=True)
+            return self.player.place_ship(ship_type, row, column, horizontal)
         else:
             raise RuntimeError("Tried to place a ship, when it's not the time for this")
 
@@ -72,12 +84,16 @@ class GameManager:
         self.network_client.send_attack_info(row, column)
 
     def handle_response(self) -> None:
+        """
+        Handles responses from the game sever. Should be run in some kind of loop.
+        For example: pygame game loop
+        """
         while not self.network_client.message_queue.empty():
             try:
                 message = self.network_client.message_queue.get_nowait()
             except Empty:
                 logger.info(
-                    "[GameClient] Tried getting message from the queue, but it was "
+                    "[GameManager] Tried getting message from the queue, but it was "
                     "empty"
                 )
                 break
@@ -94,26 +110,29 @@ class GameManager:
                 case _:  # we pass for now
                     pass
 
-    def _handle_shot(self, message: dict) -> None:
+    def _get_cords(self, message: dict) -> tuple[int, int] | None:
         row_content = message.get("row")
         column_content = message.get("column")
         if row_content is not None and column_content is not None:
             row: int = int(row_content)
             column: int = int(column_content)
         else:
-            logger.error("[GameClient] row or column is empty in handle_shot()")
+            logger.error("[GameManager] row or column is empty in handle_shot()")
+            return None
             # if message is weird then we just ignore it
-            return
+        return row, column
+
+    def _handle_shot(self, message: dict) -> None:
+        coords = self._get_cords(message)
+        if coords is not None:
+            row, column = coords
 
         field_state: FieldState = self.player.get_own_board_state(row, column)
         try:
             self.player.board.shoot(row, column)
         except OutOfBoundsError:
-            logger.info("[GameClient] Enemy tried to shot out of bounds!")
-            self.network_client.send_shot_result(
-                row, column, ShotResult.AlreadyShot
-            )  # we don't have specific value for that
-            # TODO we probably should do something about that
+            logger.info("[GameManager] Enemy tried to shot out of bounds!")
+            self.network_client.send_shot_result(row, column, ShotResult.OutOfBounds)
             return
         except AlreadyShotError:
             logger.info(
@@ -137,29 +156,25 @@ class GameManager:
         self.network_client.disconnect()
 
     def _handle_shot_result(self, message: dict) -> None:
-        row_content = message.get("row")
-        column_content = message.get("column")
-        if row_content is not None and column_content is not None:
-            row: int = int(row_content)
-            column: int = int(column_content)
-        else:
-            logger.error("[GameClient] row or column is empty in handle_shot()")
-            # if message is weird then we just ignore it
-            return
+        coords = self._get_cords(message)
+        if coords is not None:
+            row, column = coords
 
         try:
             shot_result: ShotResult = ShotResult[str(message.get("result"))]
         except KeyError:
-            logger.info("[GameClient] weird key in shot_result in handle_shot_result()")
+            logger.info(
+                "[GameManager] weird key in shot_result in handle_shot_result()"
+            )
             return
         try:
             self.player.mark_shot(row, column, shot_result)
         except OutOfBoundsError:
-            logger.info("[GameClient] Enemy reported the shot was out of bounds!")
+            logger.info("[GameManager] Enemy reported the shot was out of bounds!")
             return
         except AlreadyShotError:
             logger.info(
-                "[GameClient] Enemy reported that the player already "
+                "[GameManager] Enemy reported that the player already "
                 f"made shot at {row, column}"
             )
             return
