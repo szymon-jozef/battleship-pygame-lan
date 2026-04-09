@@ -21,9 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkServer(NetworkCore):
-    def __init__(
-        self, server_ip: str = socket.gethostbyname(socket.gethostname())
-    ) -> None:
+    def __init__(self, server_ip: str = "0.0.0.0") -> None:
         super().__init__(ip_address=server_ip)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.MAX_PLAYERS: int = 2
