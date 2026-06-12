@@ -2,7 +2,6 @@ import logging
 import socket
 import sys
 import threading
-from pathlib import Path
 from queue import Empty
 
 import pygame
@@ -30,6 +29,20 @@ def get_local_ip() -> str:
         return "127.0.0.1"
 
 
+def get_next_needed_ship(gm: GameManager) -> ShipType | None:
+    """Zwraca kolejny typ statku, który gracz musi jeszcze rozstawić."""
+    order = [
+        ShipType.FourMaster,
+        ShipType.ThreeMaster,
+        ShipType.TwoMaster,
+        ShipType.OneMaster,
+    ]
+    for ship_type in order:
+        if gm.player.available_ships[ship_type] > 0:
+            return ship_type
+    return None
+
+
 def main() -> None:
     logger = logging.getLogger(__name__)
     logging.basicConfig(
@@ -44,24 +57,19 @@ def main() -> None:
 
     pygame.init()
     pygame.mixer.init()
-
-    # Dynamiczne ustalanie ścieżki do folderu z dźwiękami (assets/sfx)
-    # Wychodzimy z src/battleship_pygame_lan/ do głównego katalogu projektu
-    BASE_DIR = Path(__file__).resolve().parents[2]
-    SFX_DIR = BASE_DIR / "assets" / "sfx"
-
-    try:
-        hit_sound = pygame.mixer.Sound(str(SFX_DIR / "hit.mp3"))
-        miss_sound = pygame.mixer.Sound(str(SFX_DIR / "miss.mp3"))
-        logger.info(f"Pomyślnie załadowano dźwięki z katalogu: {SFX_DIR}")
-    except pygame.error as e:
-        logger.error(f"Nie udało się załadować plików dźwiękowych z {SFX_DIR}: {e}")
-        hit_sound = None
-        miss_sound = None
-
     screen = pygame.display.set_mode((1000, 600))
     pygame.display.set_caption("Battleship LAN")
     clock = pygame.time.Clock()
+
+    # --- ŁADOWANIE DŹWIĘKÓW MP3 ---
+    try:
+        hit_sound = pygame.mixer.Sound("assets/sounds/hit.mp3")
+        miss_sound = pygame.mixer.Sound("assets/sounds/miss.mp3")
+        print("[AUDIO] Pomyślnie załadowano dźwięki .mp3")
+    except Exception as e:
+        hit_sound = None
+        miss_sound = None
+        print(f"[MUTE] Brak plików dźwiękowych: {e}")
 
     info_font = pygame.font.SysFont("Arial", 22, bold=True)
 
@@ -77,6 +85,9 @@ def main() -> None:
 
     game_state = "MENU"
     running = True
+
+    # Kierunek stawiania statku (True = poziomo, False = pionowo)
+    ship_horizontal = True
 
     while running:
         for event in pygame.event.get():
@@ -104,13 +115,7 @@ def main() -> None:
                     )
                     gm.connect()
 
-                    try:
-                        gm.network_client.current_game_state = GameState.SHIP_PLACEMENT
-                        gm.place_ship(ShipType.ThreeMaster, 1, 1)
-                        gm.place_ship(ShipType.FourMaster, 5, 5, False)
-                    except Exception as e:
-                        logger.error(f"Ship placement failed: {e}")
-
+                    ready_sent = False
                     game_state = "GAME"
 
                 elif action == "join_final":
@@ -120,10 +125,7 @@ def main() -> None:
                     gm = GameManager(player_name=menu.player_name, server_ip=target_ip)
                     try:
                         gm.connect()
-                        gm.network_client.current_game_state = GameState.SHIP_PLACEMENT
-                        gm.place_ship(ShipType.ThreeMaster, 1, 1)
-                        gm.place_ship(ShipType.FourMaster, 5, 7, False)
-
+                        ready_sent = False
                         game_state = "GAME"
                     except Exception as e:
                         print(f"[BŁĄD] Połączenie nieudane: {e}")
@@ -131,30 +133,76 @@ def main() -> None:
                 elif action == "quit":
                     running = False
 
-            elif game_state == "GAME":
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    game_state = "MENU"
+            elif game_state == "GAME" and gm is not None:
+                # Sprawdzamy, czy lokalny gracz wciąż jeszcze fizycznie rozstawia statki
+                is_local_placement = (
+                    gm.network_client.enemy_name is not None
+                    and not gm.player.is_every_ship_placed
+                )
 
-                # Wykrywanie strzałów na radarze (prawy ekran)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        game_state = "MENU"
+                    elif event.key in (pygame.K_r, pygame.K_SPACE):
+                        ship_horizontal = not ship_horizontal
+                        print(
+                            f"[GRA] Orientacja statku: {'POZIOMA' if ship_horizontal else 'PIONOWA'}"
+                        )
+
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if (
-                        gm
-                        and gm.network_client.enemy_name
+                    pos = pygame.mouse.get_pos()
+
+                    # 1. KLIKANIE W FAZIE ROZSTAWIANIA STATKÓW
+                    if is_local_placement:
+                        cell = renderer.get_clicked_cell(pos, 50, 80)
+                        if cell:
+                            row, col = cell
+                            next_ship = get_next_needed_ship(gm)
+                            if next_ship:
+                                try:
+                                    success = gm.player.place_ship(
+                                        next_ship, row, col, ship_horizontal
+                                    )
+                                    if success:
+                                        print(
+                                            f"[GRA] Postawiono {next_ship.name} na pozycji {row, col}"
+                                        )
+                                except Exception as e:
+                                    print(f"[GRA] Nie można postawić statku: {e}")
+                                    logger.error(f"Ship placement failed: {e}")
+
+                    # 2. KLIKANIE W FAZIE STRZELANIA
+                    elif (
+                        gm.network_client.enemy_name
+                        and gm.player.is_every_ship_placed
+                        and gm.game_state != GameState.SHIP_PLACEMENT
                         and gm.network_client.is_my_turn
                     ):
-                        pos = pygame.mouse.get_pos()
                         cell = renderer.get_clicked_cell(pos, 550, 80)
                         if cell:
                             row, col = cell
                             try:
+                                # Zapewniamy idealne dopasowanie wielkości liter imienia gracza z siecią,
+                                # aby GameManager pomyślnie przetworzył pakiet trafienia/pudła.
+                                gm.player.name = gm.network_client.player_name
+
+                                # Przywrócone wywołanie z poprzedniego kroku
                                 gm.shoot(row, col)
                             except Exception as e:
+                                print(f"[GRA] Nie można oddać strzału: {e}")
                                 logger.error(f"Błąd wysyłania ataku: {e}")
 
         # === OBSŁUGA SEKCJI SIECIOWEJ POPRZEZ MANAGER ===
         if gm and gm.network_client.connected:
-            if gm.network_client.enemy_name and not ready_sent:
-                print(f"[GRA] Wysyłanie gotowości planszy dla: {gm.player.name}")
+            # Automatyczne wysłanie pakietu gotowości po rozstawieniu całej floty
+            if (
+                gm.network_client.enemy_name
+                and gm.player.is_every_ship_placed
+                and not ready_sent
+            ):
+                print(
+                    f"[GRA] Flota gotowa. Wysyłanie pakietu SHIP_PLACED dla: {gm.player.name}"
+                )
                 ready_payload = build_ready_payload(
                     gm.player.name, valid_ready_type, True
                 )
@@ -165,7 +213,7 @@ def main() -> None:
 
             gm.handle_response()
 
-            # Konsumowanie kolejki GUI
+            # --- KONSUMOWANIE KOLEJKI GUI + DŹWIĘKI ---
             try:
                 while True:
                     gui_event = gm.gui_events_queue.get_nowait()
@@ -187,7 +235,7 @@ def main() -> None:
             except Empty:
                 pass
 
-        # === RENDEROWANIE GRY ===
+        # === RENDEROWANIE INTERFEJSU GRY ===
         if game_state == "MENU":
             menu.draw()
             ready_sent = False
@@ -204,18 +252,43 @@ def main() -> None:
                 f"RADAR (OPPONENT: {gm.network_client.enemy_name or 'Oczekiwanie...'})",
             )
 
+            is_local_placement = (
+                gm.network_client.enemy_name is not None
+                and not gm.player.is_every_ship_placed
+            )
+
+            # --- SEKCJA STATUSÓW DOLNYCH ---
             if gm.network_client.connected:
                 if not gm.network_client.enemy_name:
-                    turn_text = "OCZEKIWANIE NA GRACZA"
+                    turn_text = "OCZEKIWANIE NA DRUGIEGO GRACZA..."
                     turn_color = (255, 255, 0)
-                elif gm.network_client.is_my_turn:
-                    turn_text = "TWOJA TURA"
-                    turn_color = (50, 255, 50)
+
+                # Sytuacja 1: Ty wciąż rozstawiasz statki
+                elif is_local_placement:
+                    next_ship = get_next_needed_ship(gm)
+                    if next_ship:
+                        orient = "POZIOMO" if ship_horizontal else "PIONOWO"
+                        turn_text = f"FAZA ROZSTAWIANIA: Ustaw {next_ship.name} ({orient}) [R/SPACJA - obrót]"
+                        turn_color = (100, 200, 255)
+                    else:
+                        turn_text = "ZATWIERDZANIE ROZSTAWIENIA..."
+                        turn_color = (255, 255, 255)
+
+                # Sytuacja 2: Ty skończyłeś, ale serwer wciąż utrzymuje SHIP_PLACEMENT (przeciwnik rozstawia)
+                elif ready_sent and gm.game_state == GameState.SHIP_PLACEMENT:
+                    turn_text = "WSZYSTKIE STATKI POSTAWIONE! Oczekiwanie na zakończenie rozstawiania przez przeciwnika..."
+                    turn_color = (255, 165, 0)
+
+                # Sytuacja 3: Bitwa!
                 else:
-                    turn_text = "TURA PRZECIWNIKA"
-                    turn_color = (255, 50, 50)
+                    if gm.network_client.is_my_turn:
+                        turn_text = "TWOJA TURA (STRZELAJ NA RADARZE!)"
+                        turn_color = (50, 255, 50)
+                    else:
+                        turn_text = "TURA PRZECIWNIKA"
+                        turn_color = (255, 50, 50)
             else:
-                turn_text = "OCZEKIWANIE NA POŁĄCZENIE"
+                turn_text = "OCZEKIWANIE NA POŁĄCZENIE..."
                 turn_color = (255, 255, 0)
 
             turn_surface = info_font.render(turn_text, True, turn_color)
