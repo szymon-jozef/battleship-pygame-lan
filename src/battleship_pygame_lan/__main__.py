@@ -64,8 +64,8 @@ def main() -> None:
 
     # --- ŁADOWANIE DŹWIĘKÓW MP3 ---
     try:
-        hit_sound = pygame.mixer.Sound("assets/sounds/hit.mp3")
-        miss_sound = pygame.mixer.Sound("assets/sounds/miss.mp3")
+        hit_sound = pygame.mixer.Sound("assets/sfx/hit.mp3")
+        miss_sound = pygame.mixer.Sound("assets/sfx/miss.mp3")
         print("[AUDIO] Pomyślnie załadowano dźwięki .mp3")
     except Exception as e:
         hit_sound = None
