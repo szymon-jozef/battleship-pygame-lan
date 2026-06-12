@@ -25,6 +25,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       pyproject-nix,
       uv2nix,
@@ -109,8 +110,35 @@
           };
         }
       );
-      packages = forAllSystems (system: {
-        default = pythonSets.${system}.mkVirtualEnv "battleships-pygame-env" workspace.deps.default;
-      });
+
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          venv = pythonSets.${system}.mkVirtualEnv "battleships-pygame-env" workspace.deps.default;
+
+          desktopItem = pkgs.makeDesktopItem {
+            name = "battleship-pygame-lan";
+            desktopName = "Battleships (LAN)";
+            exec = "battleship-pygame-lan";
+            comment = "LAN Game of battleships, made with pygame.";
+            categories = [
+              "Game"
+              "BoardGame"
+            ];
+          };
+        in
+        {
+          default = pkgs.symlinkJoin {
+            name = "battleship-pygame-lan";
+            paths = [
+              venv
+              desktopItem
+            ];
+          };
+        }
+      );
+
+      nixosModules.default = import ./nix/module.nix self;
     };
 }
