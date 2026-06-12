@@ -25,6 +25,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       pyproject-nix,
       uv2nix,
@@ -109,8 +110,11 @@
           };
         }
       );
+
       packages = forAllSystems (system: {
         default = pythonSets.${system}.mkVirtualEnv "battleships-pygame-env" workspace.deps.default;
       });
+
+      nixosModules.default = import ./nix/module.nix self;
     };
 }
