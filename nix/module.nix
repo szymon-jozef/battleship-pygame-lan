@@ -3,6 +3,7 @@ self:
   config,
   lib,
   pkgs,
+  ...
 }:
 let
   inherit (pkgs.stdenv.hostPlatform) system;
