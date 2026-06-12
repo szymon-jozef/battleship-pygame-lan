@@ -3,6 +3,7 @@ from typing import Any, cast
 
 import pygame
 
+from ..game_manager.enums import GuiEvent
 from ..logic.enums import ShotResult
 
 WHITE = (255, 255, 255)
@@ -15,18 +16,24 @@ class MainMenu:
     def __init__(self, screen: pygame.Surface) -> None:
         self.screen = screen
         self.screen_rect = screen.get_rect()
+        self.width, self.height = screen.get_size()
+
         self.font_title = pygame.font.SysFont("Arial", 80, bold=True)
         self.font_button = pygame.font.SysFont("Arial", 38)
         self.font_label = pygame.font.SysFont("Arial", 28)
+
         self.bg_filenames = ["bg1.jpg", "bg2.jpg", "bg3.jpg"]
         self.backgrounds: list[pygame.Surface] = []
         self.play_bg: pygame.Surface | None = None
+
         self.click_sound: pygame.mixer.Sound | None = None
         self.play_sound: pygame.mixer.Sound | None = None
         self.hit_sound: pygame.mixer.Sound | None = None
         self.miss_sound: pygame.mixer.Sound | None = None
         self.volume: float = 0.5
+
         self.load_assets()
+
         self.current_idx = 0
         self.next_idx = 1
         self.alpha = 0
@@ -34,16 +41,19 @@ class MainMenu:
         self.display_time = 20000
         self.last_switch = pygame.time.get_ticks()
         self.is_fading = False
+
         self.menu_state = "MAIN"
         self.last_state = "MAIN"
         self.panel_y = float(-self.screen_rect.height)
         self.slide_speed = 25
-        self.player_name = "Morbius"
+
+        self.player_name = "Player"
         self.host_ip = "127.0.0.1"
         self.input_active = False
         self.input_field_rect = pygame.Rect(0, 0, 0, 0)
         self.slider_rect = pygame.Rect(0, 0, 300, 10)
         self.left_margin = 70
+
         self.main_buttons: list[dict[str, Any]] = [
             {"text": "Play", "pos_y": 240, "action": "show_modes"},
             {"text": "Settings", "pos_y": 330, "action": "show_settings"},
@@ -67,6 +77,7 @@ class MainMenu:
         project_root = os.path.abspath(os.path.join(base_dir, "..", "..", ".."))
         gfx_path = os.path.join(project_root, "assets", "gfx")
         sfx_path = os.path.join(project_root, "assets", "sfx")
+
         self.backgrounds = [
             self._load_and_scale(os.path.join(gfx_path, f)) for f in self.bg_filenames
         ]
@@ -117,6 +128,13 @@ class MainMenu:
         elif result == ShotResult.Miss and self.miss_sound:
             self.miss_sound.play()
 
+    def play_gui_event_sound(self, event_type: GuiEvent) -> None:
+        """Odtwarza dźwięk na podstawie zdarzenia wrzuconego do kolejki przez GameManager."""
+        if event_type in [GuiEvent.ShotHit, GuiEvent.ShotMarked] and self.hit_sound:
+            self.hit_sound.play()
+        elif event_type == GuiEvent.ShotMissed and self.miss_sound:
+            self.miss_sound.play()
+
     def update(self) -> None:
         now = pygame.time.get_ticks()
         if not self.is_fading and now - self.last_switch > self.display_time:
@@ -128,6 +146,7 @@ class MainMenu:
                 self.current_idx = self.next_idx
                 self.next_idx = (self.current_idx + 1) % len(self.backgrounds)
                 self.last_switch = now
+
         target_y = (
             0.0
             if self.menu_state in ["MODE", "SETTINGS", "JOIN_INPUT"]
@@ -142,8 +161,30 @@ class MainMenu:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.menu_state == "SETTINGS":
                 if self.slider_rect.collidepoint(event.pos):
+                    if self.click_sound:
+                        self.click_sound.play()
                     self._update_volume(event.pos[0])
-                self.input_active = self.input_field_rect.collidepoint(event.pos)
+
+                if self.input_field_rect.collidepoint(event.pos):
+                    if self.click_sound:
+                        self.click_sound.play()
+                    if not self.input_active:
+                        self.input_active = True
+                        self.player_name = ""
+                    return "edit_started"
+                else:
+                    self.input_active = False
+
+            elif self.menu_state == "JOIN_INPUT":
+                if self.input_field_rect.collidepoint(event.pos):
+                    if self.click_sound:
+                        self.click_sound.play()
+                    if not self.input_active:
+                        self.input_active = True
+                        self.host_ip = ""
+                    return "edit_started"
+                else:
+                    self.input_active = False
 
             btns: list[dict[str, Any]] = []
             if self.menu_state == "MAIN":
@@ -169,8 +210,10 @@ class MainMenu:
                         self.play_sound.play()
                     elif self.click_sound:
                         self.click_sound.play()
+
                     self.last_state = self.menu_state
                     action = cast(str, btn["action"])
+
                     if action == "show_modes":
                         self.menu_state = "MODE"
                     elif action == "show_settings":
@@ -179,16 +222,40 @@ class MainMenu:
                         self.menu_state = "JOIN_INPUT"
                     elif action == "back":
                         self.menu_state = "MAIN"
+                        if not self.player_name.strip():
+                            self.player_name = "Player"
+                        if not self.host_ip.strip():
+                            self.host_ip = "127.0.0.1"
                         return "settings_updated"
+
+                    if action == "join_final":
+                        if not self.host_ip.strip():
+                            self.host_ip = "127.0.0.1"
+                        self.target_ip = self.host_ip
+
                     return action
 
         if event.type == pygame.KEYDOWN and self.input_active:
             if event.key == pygame.K_BACKSPACE:
-                self.player_name = self.player_name[:-1]
+                if self.menu_state == "SETTINGS":
+                    self.player_name = self.player_name[:-1]
+                elif self.menu_state == "JOIN_INPUT":
+                    self.host_ip = self.host_ip[:-1]
             elif event.key == pygame.K_RETURN:
                 self.input_active = False
-            elif len(self.player_name) < 15:
-                self.player_name += event.unicode
+                if self.menu_state == "SETTINGS" and not self.player_name.strip():
+                    self.player_name = "Player"
+                elif self.menu_state == "JOIN_INPUT" and not self.host_ip.strip():
+                    self.host_ip = "127.0.0.1"
+                return "settings_updated"
+            else:
+                if self.menu_state == "SETTINGS" and len(self.player_name) < 15:
+                    if event.unicode.isprintable():
+                        self.player_name += event.unicode
+                elif self.menu_state == "JOIN_INPUT" and len(self.host_ip) < 15:
+                    if event.unicode.isdigit() or event.unicode == ".":
+                        self.host_ip += event.unicode
+            return "settings_updated"
 
         if (
             event.type == pygame.MOUSEMOTION
@@ -197,6 +264,7 @@ class MainMenu:
             and self.slider_rect.collidepoint(event.pos)
         ):
             self._update_volume(event.pos[0])
+
         return None
 
     def _update_volume(self, mouse_x: int) -> None:
@@ -211,6 +279,7 @@ class MainMenu:
             nxt = self.backgrounds[self.next_idx].copy()
             nxt.set_alpha(self.alpha)
             self.screen.blit(nxt, (0, 0))
+
         if self.panel_y > -self.screen_rect.height:
             active = self.menu_state if self.menu_state != "MAIN" else self.last_state
             if active == "SETTINGS":
@@ -219,6 +288,7 @@ class MainMenu:
                 self.screen.blit(ov, (0, int(self.panel_y)))
             elif self.play_bg:
                 self.screen.blit(self.play_bg, (0, int(self.panel_y)))
+
         m_pos = pygame.mouse.get_pos()
         if self.menu_state == "MAIN" and self.panel_y <= -self.screen_rect.height:
             self.screen.blit(
