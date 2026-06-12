@@ -248,7 +248,7 @@ class NetworkServer(NetworkCore):
             and self.current_game_state == GameState.WAR
         ):
             self._route(msg, attacker)
-            if shot_result != ShotResult.AlreadyShot:
+            if shot_result == ShotResult.Miss:
                 self._switch_turn()
                 logger.info(f"[Server] {attacker} Changing turn...")
 

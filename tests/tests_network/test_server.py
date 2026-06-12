@@ -124,9 +124,9 @@ def test_server_shot_result_route(mock_server: NetworkServer) -> None:
 
     mock_server._handle_shot_result(payload_data_2, msg_2)
 
-    expected_bytes = msg_2.encode("utf-8")
+    expected_bytes_2 = msg_2.encode("utf-8")
 
-    mock_conn_spider.sendall.assert_any_call(expected_bytes)
+    mock_conn_spider.sendall.assert_any_call(expected_bytes_2)
 
     assert mock_server.current_turn is player_morbius
 
