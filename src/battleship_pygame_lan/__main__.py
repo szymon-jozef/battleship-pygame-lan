@@ -1,7 +1,9 @@
 import logging
 import sys
+from pathlib import Path
 
 import pygame
+from appdirs import user_log_dir
 
 from battleship_pygame_lan.gui.board_render import BoardRenderer
 from battleship_pygame_lan.gui.main_menu import MainMenu
@@ -11,11 +13,19 @@ from battleship_pygame_lan.logic.enums import ShipType
 
 def main() -> None:
     logger = logging.getLogger(__name__)
+    log_dir: Path = Path(user_log_dir("battleship-pygame-lan"))
+    log_fname: Path = Path("battleships.log")
+    log_path: Path = log_dir.joinpath(log_fname)
+
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path.touch()
+
     logging.basicConfig(
-        filename="battleships.log",
+        filename=str(log_path),
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
+
     pygame.init()
     pygame.mixer.init()
     screen = pygame.display.set_mode((1000, 600))

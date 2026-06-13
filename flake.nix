@@ -117,6 +117,35 @@
           pkgs = nixpkgs.legacyPackages.${system};
           venv = pythonSets.${system}.mkVirtualEnv "battleships-pygame-env" workspace.deps.default;
 
+          runtimeLibs = with pkgs; [
+            libGL
+            libxkbcommon
+            wayland
+            wayland-protocols
+            libdecor
+            libX11
+            libXcursor
+            libXext
+            libXinerama
+            libXi
+            libXrandr
+            libpulseaudio
+          ];
+
+          wrappedApp =
+            pkgs.runCommand "battleship-pygame-lan-wrapped"
+              {
+                nativeBuildInputs = [ pkgs.makeWrapper ];
+              }
+              ''
+                mkdir -p $out/bin $out/share/battleship-pygame-lan
+                cp -R ${./assets} $out/share/battleship-pygame-lan/assets
+                makeWrapper ${venv}/bin/battleship-pygame-lan $out/bin/battleship-pygame-lan \
+                  --prefix LD_LIBRARY_PATH : "${pkgs.lib.makeLibraryPath runtimeLibs}" \
+                  --set SDL_VIDEODRIVER "wayland,x11" \
+                  --set BATTLESHIP_ASSETS_DIR "$out/share/battleship-pygame-lan/assets"
+              '';
+
           desktopItem = pkgs.makeDesktopItem {
             name = "battleship-pygame-lan";
             desktopName = "Battleships (LAN)";
@@ -132,7 +161,7 @@
           default = pkgs.symlinkJoin {
             name = "battleship-pygame-lan";
             paths = [
-              venv
+              wrappedApp
               desktopItem
             ];
           };
