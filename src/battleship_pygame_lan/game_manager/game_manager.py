@@ -181,5 +181,7 @@ class GameManager:
                 self.gui_events_queue.put(GuiEvent.ShotHit)
             case ShotResult.Miss:
                 self.gui_events_queue.put(GuiEvent.ShotMissed)
+            case ShotResult.Sunk:
+                self.gui_events_queue.put(GuiEvent.ShotSunk)
             case _:
                 pass

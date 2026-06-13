@@ -9,11 +9,12 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "appdirs>=1.4.4",
     "pygame>=2.6.1",
 ]
 
 [project.scripts]
-battleship-pygame-lan = "battleship_pygame_lan:main"
+battleship-pygame-lan = "battleship_pygame_lan.__main__:main"
 
 [build-system]
 requires = ["uv_build>=0.11.2,<0.12.0"]

@@ -73,10 +73,14 @@ class MainMenu:
         ]
 
     def load_assets(self) -> None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.abspath(os.path.join(base_dir, "..", "..", ".."))
-        gfx_path = os.path.join(project_root, "assets", "gfx")
-        sfx_path = os.path.join(project_root, "assets", "sfx")
+        assets_dir = os.environ.get("BATTLESHIP_ASSETS_DIR")
+        if not assets_dir:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.abspath(os.path.join(base_dir, "..", "..", ".."))
+            assets_dir = os.path.join(project_root, "assets")
+
+        gfx_path = os.path.join(assets_dir, "gfx")
+        sfx_path = os.path.join(assets_dir, "sfx")
 
         self.backgrounds = [
             self._load_and_scale(os.path.join(gfx_path, f)) for f in self.bg_filenames
