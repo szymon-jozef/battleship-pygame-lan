@@ -8,7 +8,10 @@ WHITE = (255, 255, 255)
 SHIP_COLOR = (100, 100, 100)
 MISS_COLOR = (150, 150, 255)
 HIT_COLOR = (255, 50, 50)
-HOVER_COLOR = (0, 220, 0)  # Zielony kolor dla podglądu rozstawianego statku
+
+# Kolory podglądu statku
+HOVER_LEGAL = (0, 220, 0)  # Zielony dla poprawnej pozycji
+HOVER_ILLEGAL = (220, 0, 0)  # Czerwony dla nielegalnej pozycji
 
 CELL_SIZE = 40
 CELL_MARGIN = 2
@@ -60,21 +63,56 @@ class BoardRenderer:
         )
         self.screen.blit(title_surf, (ox, oy - TITLE_OFFSET_Y))
 
-        # Wyznaczanie kafelków zajmowanych przez podglądany statek
         preview_cells = set()
+        preview_color = HOVER_LEGAL
+
         if hover_cell and hover_ship_info:
             h_row, h_col = hover_cell
             ship_length, horizontal = hover_ship_info
 
+            # 1. Wyznaczamy kafelki, które fizycznie zajmie statek (pionowo w górę / poziomo w prawo)
+            out_of_bounds = False
+            intended_cells = []
             for i in range(ship_length):
-                # Zmiana: dla pionu odejmujemy i (h_row - i), aby podgląd szedł w górę planszy
                 r = h_row if horizontal else h_row - i
                 c = h_col + i if horizontal else h_col
+                intended_cells.append((r, c))
 
-                # Dodajemy tylko te kafelki, które mieszczą się na planszy
                 if 0 <= r < board.row and 0 <= c < board.column:
                     preview_cells.add((r, c))
+                else:
+                    out_of_bounds = True
 
+            # 2. Samodzielna walidacja kolizji (z uwzględnieniem nowo postawionego statku)
+            has_collision = False
+            if out_of_bounds:
+                has_collision = True
+            else:
+                for r, c in intended_cells:
+                    if has_collision:
+                        break
+
+                    # NOWOŚĆ: Sprawdzamy, czy sam kafelek podglądu nie jest już zajęty przez świeżo postawiony statek
+                    if board.get_field_state(r, c) == FieldState.Taken:
+                        has_collision = True
+                        break
+
+                    # Sprawdzamy otoczenie kafelka (boki i skosy: -1 do +1) pod kątem sąsiednich statków
+                    for dr in range(-1, 2):
+                        for dc in range(-1, 2):
+                            nr, nc = r + dr, c + dc
+                            if 0 <= nr < board.row and 0 <= nc < board.column:
+                                if board.get_field_state(nr, nc) == FieldState.Taken:
+                                    # Czerwony kolor odpali się tylko wtedy, gdy wykryty statek obok
+                                    # NIE JEST częścią aktualnie rysowanego podglądu
+                                    if (nr, nc) not in intended_cells:
+                                        has_collision = True
+                                        break
+
+            if has_collision:
+                preview_color = HOVER_ILLEGAL
+
+        # Rysowanie siatki planszy
         for r in range(board.row):
             label_y = oy + (r * GRID_STEP) + LABEL_OFFSET_Y
             self.screen.blit(
@@ -92,9 +130,9 @@ class BoardRenderer:
                 )
                 state = board.get_field_state(r, c)
 
-                # Jeżeli ten kafelek jest podświetlony przez podgląd, zmieniamy jego kolor
+                # Przypisanie koloru tła kafelka
                 if (r, c) in preview_cells:
-                    base_color = HOVER_COLOR
+                    base_color = preview_color
                 else:
                     base_color = self.colors.get(state, (30, 30, 60))
 
@@ -128,7 +166,7 @@ class BoardRenderer:
                         2,
                     )
 
-                # Rysowanie krawędzi kafelka (wyraźniejsza biała ramka dla podglądu)
+                # Rysowanie krawędzi kafelka
                 if (r, c) in preview_cells:
                     pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
                 else:
