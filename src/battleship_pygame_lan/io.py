@@ -1,7 +1,7 @@
 import configparser
 from pathlib import Path
 
-from appdirs import user_config_dir
+from appdirs import user_config_dir  # type: ignore
 
 
 class Config:
