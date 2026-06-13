@@ -226,7 +226,14 @@ class Radar(BaseGrid):
 
                 for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                     nr, nc = r + dr, c + dc
-                    if 0 <= nr < self.row and 0 <= nc < self.column:
-                        if self._grid[nr][nc].state in [FieldState.Hit, FieldState.Sunk]:
-                            if (nr, nc) not in visited:
-                                to_visit.append((nr, nc))
+                    if (
+                        0 <= nr < self.row
+                        and 0 <= nc < self.column
+                        and self._grid[nr][nc].state
+                        in [
+                            FieldState.Hit,
+                            FieldState.Sunk,
+                        ]
+                        and (nr, nc) not in visited
+                    ):
+                        to_visit.append((nr, nc))

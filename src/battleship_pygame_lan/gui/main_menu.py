@@ -3,6 +3,8 @@ from typing import Any, cast
 
 import pygame
 
+from battleship_pygame_lan.io import Config
+
 from ..game_manager.enums import GuiEvent
 from ..logic.enums import ShotResult
 
@@ -14,6 +16,8 @@ BUTTON_BG = (20, 20, 30, 220)
 
 class MainMenu:
     def __init__(self, screen: pygame.Surface) -> None:
+        self.config_manager = Config()  # we use default config path
+
         self.screen = screen
         self.screen_rect = screen.get_rect()
         self.width, self.height = screen.get_size()
@@ -30,7 +34,7 @@ class MainMenu:
         self.play_sound: pygame.mixer.Sound | None = None
         self.hit_sound: pygame.mixer.Sound | None = None
         self.miss_sound: pygame.mixer.Sound | None = None
-        self.volume: float = 0.5
+        self.volume: float = self.config_manager.get_volume
 
         self.load_assets()
 
@@ -47,7 +51,7 @@ class MainMenu:
         self.panel_y = float(-self.screen_rect.height)
         self.slide_speed = 25
 
-        self.player_name = "Player"
+        self.player_name = self.config_manager.get_player_name
         self.host_ip = "127.0.0.1"
         self.input_active = False
         self.input_field_rect = pygame.Rect(0, 0, 0, 0)
@@ -226,11 +230,16 @@ class MainMenu:
                     elif action == "show_join_input":
                         self.menu_state = "JOIN_INPUT"
                     elif action == "back":
-                        self.menu_state = "MAIN"
-                        if not self.player_name.strip():
-                            self.player_name = "Player"
+                        if self.menu_state == "SETTINGS":
+                            if not self.player_name.strip():
+                                self.player_name = "Player"
+                            self.config_manager.save_player_name(self.player_name)
+                            self.config_manager.save_volume(self.volume)
+
                         if not self.host_ip.strip():
                             self.host_ip = "127.0.0.1"
+
+                        self.menu_state = "MAIN"
                         return "settings_updated"
 
                     if action == "join_final":
@@ -248,8 +257,12 @@ class MainMenu:
                     self.host_ip = self.host_ip[:-1]
             elif event.key == pygame.K_RETURN:
                 self.input_active = False
-                if self.menu_state == "SETTINGS" and not self.player_name.strip():
-                    self.player_name = "Player"
+                if self.menu_state == "SETTINGS":
+                    if not self.player_name.strip():
+                        self.player_name = "Player"
+
+                    self.config_manager.save_player_name(self.player_name)
+
                 elif self.menu_state == "JOIN_INPUT" and not self.host_ip.strip():
                     self.host_ip = "127.0.0.1"
                 return "settings_updated"
