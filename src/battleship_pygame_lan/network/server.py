@@ -109,6 +109,12 @@ class NetworkServer(NetworkCore):
                 f"[Server] Could not route the message. Receiver {receiver} not found"
             )
 
+    def _ignore_client(self, conn: socket.socket) -> None:
+        bad_msg = build_connection_status_payload("Unknown", False)
+        self.send_to_socket(conn, bad_msg)
+        with suppress(Exception):
+            conn.close()
+
     def _handle_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         """
         Private method for handling the client.
@@ -119,10 +125,7 @@ class NetworkServer(NetworkCore):
                 logger.info(
                     f"[Server] client at {addr} tried to connect, but server is full"
                 )
-                bad_msg = build_connection_status_payload("Unknown", False)
-                self.send_to_socket(conn, bad_msg)
-                with suppress(Exception):
-                    conn.close()
+                self._ignore_client(conn)
                 return
 
         logger.info(f"[NEW CONNECTION] {addr} connected")
@@ -171,10 +174,21 @@ class NetworkServer(NetworkCore):
             case PayloadTypes.CONNECTION_STATUS.value:
                 if not bool(payload_data.get("status")):
                     return False
+
                 player_name = payload_data.get("player_name")
+
+                if player_name in [player.player_name for player in self.players]:
+                    # if player has the same name as the other player we end
+                    # connection with him. It's ugly, but I'm to lazy to rebuild
+                    # the whole payload system to use UUID
+
+                    self._ignore_client(current_player.conn)
+                    return False
+
                 if player_name:
                     current_player.player_name = str(player_name)
                     self._broadcast_players()
+
             case PayloadTypes.READY.value:
                 try:
                     ready_type: ReadyType = ReadyType(payload_data.get("ready_type"))
@@ -187,11 +201,14 @@ class NetworkServer(NetworkCore):
 
             case PayloadTypes.ATTACK.value:
                 self._handle_attack(payload_data, msg)
+
             case PayloadTypes.SHOT_RESULT.value:
                 self._handle_shot_result(payload_data, msg)
+
             case PayloadTypes.LOST.value:
                 loser: str = payload_data.get("loser")
                 self._end_game(loser)
+
             case _:
                 pass
 
