@@ -1,4 +1,5 @@
 import logging
+import os
 import socket
 import sys
 import threading
@@ -115,8 +116,13 @@ def main() -> None:
     screen = pygame.display.set_mode((1000, 600))
     pygame.display.set_caption("Battleship LAN")
     clock = pygame.time.Clock()
-    hit_sound = pygame.mixer.Sound("assets/sfx/hit.ogg")
-    miss_sound = pygame.mixer.Sound("assets/sfx/miss.ogg")
+
+    assets_path: Path = Path(os.getenv("BATTLESHIP_ASSETS_DIR") or "./assets")
+    hit_sound_path = assets_path.joinpath("sfx/hit.ogg")
+    miss_sound_path = assets_path.joinpath("sfx/miss.ogg")
+
+    hit_sound = pygame.mixer.Sound(hit_sound_path)
+    miss_sound = pygame.mixer.Sound(miss_sound_path)
 
     info_font = pygame.font.SysFont("Arial", 22, bold=True)
     end_title_font = pygame.font.SysFont("Arial", 36, bold=True)
