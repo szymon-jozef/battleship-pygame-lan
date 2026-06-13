@@ -64,9 +64,9 @@ def main() -> None:
 
     # --- ŁADOWANIE DŹWIĘKÓW MP3 ---
     try:
-        hit_sound = pygame.mixer.Sound("assets/sfx/hit.mp3")
-        miss_sound = pygame.mixer.Sound("assets/sfx/miss.mp3")
-        print("[AUDIO] Pomyślnie załadowano dźwięki .mp3")
+        hit_sound = pygame.mixer.Sound("assets/sfx/hit.ogg")
+        miss_sound = pygame.mixer.Sound("assets/sfx/miss.ogg")
+        print("[AUDIO] Pomyślnie załadowano dźwięki .ogg")
     except Exception as e:
         hit_sound = None
         miss_sound = None
@@ -247,19 +247,40 @@ def main() -> None:
         elif game_state == "GAME" and gm is not None:
             screen.fill((10, 10, 25))
 
+            is_local_placement = (
+                gm.network_client.enemy_name is not None
+                and not gm.player.is_every_ship_placed
+            )
+
+            # --- OBLICZANIE HOVERU DLA PODGLĄDU STATKU ---
+            hover_cell = None
+            hover_ship_info = None
+
+            if is_local_placement:
+                mouse_pos = pygame.mouse.get_pos()
+                hover_cell = renderer.get_clicked_cell(mouse_pos, 50, 80)
+                if hover_cell:
+                    next_ship = get_next_needed_ship(gm)
+                    if next_ship:
+                        # Pobieramy długość statku bezpośrednio z wartości enuma ShipType (.value to int, np. 4, 3, 2, 1)
+                        hover_ship_info = (next_ship.value, ship_horizontal)
+
             # Lewy ekran: Nasza flota
-            renderer.draw(gm.player.board, 50, 80, f"FLEET: {gm.player.name}")
+            renderer.draw(
+                gm.player.board,
+                50,
+                80,
+                f"FLEET: {gm.player.name}",
+                hover_cell=hover_cell,
+                hover_ship_info=hover_ship_info,
+            )
+
             # Prawy ekran: Radar przeciwnika
             renderer.draw(
                 gm.player.radar,
                 550,
                 80,
                 f"RADAR (OPPONENT: {gm.network_client.enemy_name or 'Oczekiwanie...'})",
-            )
-
-            is_local_placement = (
-                gm.network_client.enemy_name is not None
-                and not gm.player.is_every_ship_placed
             )
 
             # --- SEKCJA STATUSÓW DOLNYCH ---

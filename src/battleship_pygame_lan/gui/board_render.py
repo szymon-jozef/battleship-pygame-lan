@@ -8,6 +8,7 @@ WHITE = (255, 255, 255)
 SHIP_COLOR = (100, 100, 100)
 MISS_COLOR = (150, 150, 255)
 HIT_COLOR = (255, 50, 50)
+HOVER_COLOR = (0, 220, 0)  # Zielony kolor dla podglądu rozstawianego statku
 
 CELL_SIZE = 40
 CELL_MARGIN = 2
@@ -45,11 +46,34 @@ class BoardRenderer:
             FieldState.Hit: (60, 20, 20),
         }
 
-    def draw(self, board: BoardLike, ox: int, oy: int, title: str) -> None:
+    def draw(
+        self,
+        board: BoardLike,
+        ox: int,
+        oy: int,
+        title: str,
+        hover_cell: tuple[int, int] | None = None,
+        hover_ship_info: tuple[int, bool] | None = None,
+    ) -> None:
         title_surf = pygame.font.SysFont("Arial", 24, bold=True).render(
             title, True, WHITE
         )
         self.screen.blit(title_surf, (ox, oy - TITLE_OFFSET_Y))
+
+        # Wyznaczanie kafelków zajmowanych przez podglądany statek
+        preview_cells = set()
+        if hover_cell and hover_ship_info:
+            h_row, h_col = hover_cell
+            ship_length, horizontal = hover_ship_info
+
+            for i in range(ship_length):
+                # Zmiana: dla pionu odejmujemy i (h_row - i), aby podgląd szedł w górę planszy
+                r = h_row if horizontal else h_row - i
+                c = h_col + i if horizontal else h_col
+
+                # Dodajemy tylko te kafelki, które mieszczą się na planszy
+                if 0 <= r < board.row and 0 <= c < board.column:
+                    preview_cells.add((r, c))
 
         for r in range(board.row):
             label_y = oy + (r * GRID_STEP) + LABEL_OFFSET_Y
@@ -67,7 +91,12 @@ class BoardRenderer:
                     ox + (c * GRID_STEP), oy + (r * GRID_STEP), CELL_SIZE, CELL_SIZE
                 )
                 state = board.get_field_state(r, c)
-                base_color = self.colors.get(state, (30, 30, 60))
+
+                # Jeżeli ten kafelek jest podświetlony przez podgląd, zmieniamy jego kolor
+                if (r, c) in preview_cells:
+                    base_color = HOVER_COLOR
+                else:
+                    base_color = self.colors.get(state, (30, 30, 60))
 
                 pygame.draw.rect(self.screen, base_color, rect)
 
@@ -89,7 +118,7 @@ class BoardRenderer:
                         (rect.left + 5, rect.bottom - 5),
                         3,
                     )
-                elif state == FieldState.Empty:
+                elif state == FieldState.Empty and (r, c) not in preview_cells:
                     highlight = tuple(min(255, v + 30) for v in base_color)
                     pygame.draw.line(
                         self.screen,
@@ -99,7 +128,11 @@ class BoardRenderer:
                         2,
                     )
 
-                pygame.draw.rect(self.screen, (20, 40, 70), rect, 1)
+                # Rysowanie krawędzi kafelka (wyraźniejsza biała ramka dla podglądu)
+                if (r, c) in preview_cells:
+                    pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
+                else:
+                    pygame.draw.rect(self.screen, (20, 40, 70), rect, 1)
 
     def get_clicked_cell(
         self, pos: tuple[int, int], ox: int, oy: int
