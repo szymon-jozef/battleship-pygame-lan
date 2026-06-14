@@ -58,7 +58,7 @@ programs.battleship-pygame-lan.enable = true;
 # Tech stack
 This project utilises technologies like:
 - [python](https://www.python.org/) – language, with multiple modules like: logging, socket, threading, json and configparser
-- [pygame](https://github.com/pygame/pygame) – GUI
+- [pygame-ce](https://github.com/pygame-community/pygame-ce) – GUI
 - [uv](https://docs.astral.sh/uv/) – package management
 - [nix](https://nixos.org/) – distribution and devshell
 - [mypy](https://mypy-lang.org/) – type checking
