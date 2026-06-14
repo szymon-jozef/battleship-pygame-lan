@@ -55,6 +55,9 @@ imports = [
 programs.battleship-pygame-lan.enable = true;
 ```
 
+# Windows
+Install and run .exe file from the release tab
+
 # Tech stack
 This project utilises technologies like:
 - [python](https://www.python.org/) – language, with multiple modules like: logging, socket, threading, json and configparser, importlib
@@ -67,6 +70,7 @@ This project utilises technologies like:
 - [git](https://git-scm.com/) – version control
 - [pytest](https://docs.pytest.org/en/stable/) – unit tests
 - [appdirs](https://pypi.org/project/appdirs/) – finding user configuration paths
+- [pyinstaller](https://pyinstaller.org/en/stable/) – generating .exe file
 
 
 # Project structure
