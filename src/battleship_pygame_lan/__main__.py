@@ -120,9 +120,11 @@ def main() -> None:
 
     hit_sound_path = assets_path.joinpath("sfx/hit.ogg")
     miss_sound_path = assets_path.joinpath("sfx/miss.ogg")
+    sink_sound_path = assets_path.joinpath("sfx/sink.ogg")
 
     hit_sound = pygame.mixer.Sound(hit_sound_path)
     miss_sound = pygame.mixer.Sound(miss_sound_path)
+    sink_sound = pygame.mixer.Sound(sink_sound_path)
 
     info_font = pygame.font.SysFont("Arial", 22, bold=True)
     end_title_font = pygame.font.SysFont("Arial", 36, bold=True)
@@ -330,8 +332,8 @@ def main() -> None:
 
                     elif gui_event == GuiEvent.ShotSunk:
                         print("[GUI EVENT] SHIP SUNK!")
-                        if hit_sound:
-                            hit_sound.play()
+                        if sink_sound:
+                            sink_sound.play()
 
                         player_stats["shots"] += 1
                         player_stats["hits"] += 1
