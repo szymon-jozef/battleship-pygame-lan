@@ -287,8 +287,7 @@ class MainMenu:
                 elif (
                     self.menu_state == "JOIN_INPUT"
                     and len(self.host_ip) < 15
-                    and event.unicode.isdigit()
-                    or event.unicode == "."
+                    and (event.unicode.isdigit() or event.unicode == ".")
                 ):
                     self.host_ip += event.unicode
             return "settings_updated"

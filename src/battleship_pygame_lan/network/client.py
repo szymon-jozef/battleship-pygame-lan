@@ -38,7 +38,9 @@ class NetworkClient(NetworkCore):
 
     def connect(self) -> None:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.settimeout(3.0)
         self.client.connect(self.ADDR)
+        self.client.settimeout(None)
         self.connected = True
 
         receive_thread: Thread = Thread(target=self.receive, daemon=True)
