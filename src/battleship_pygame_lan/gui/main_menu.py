@@ -106,22 +106,24 @@ class MainMenu:
         self.play_bg = self._load_and_scale(
             os.path.join(gfx_path, "play_background.jpg")
         )
-        try:
-            c_f, p_f, h_f, m_f = [
-                os.path.join(sfx_path, x)
-                for x in ["click.mp3", "play.mp3", "hit.mp3", "miss.mp3"]
-            ]
-            if os.path.exists(c_f):
-                self.click_sound = pygame.mixer.Sound(c_f)
-            if os.path.exists(p_f):
-                self.play_sound = pygame.mixer.Sound(p_f)
-            if os.path.exists(h_f):
-                self.hit_sound = pygame.mixer.Sound(h_f)
-            if os.path.exists(m_f):
-                self.miss_sound = pygame.mixer.Sound(m_f)
-            self.update_sfx_volume()
-        except Exception:
-            pass
+
+        if pygame.mixer:
+            try:
+                c_f, p_f, h_f, m_f = [
+                    os.path.join(sfx_path, x)
+                    for x in ["click.mp3", "play.mp3", "hit.mp3", "miss.mp3"]
+                ]
+                if os.path.exists(c_f):
+                    self.click_sound = pygame.mixer.Sound(c_f)
+                if os.path.exists(p_f):
+                    self.play_sound = pygame.mixer.Sound(p_f)
+                if os.path.exists(h_f):
+                    self.hit_sound = pygame.mixer.Sound(h_f)
+                if os.path.exists(m_f):
+                    self.miss_sound = pygame.mixer.Sound(m_f)
+                self.update_sfx_volume()
+            except Exception:
+                pass
 
     def _load_and_scale(self, path: str) -> pygame.Surface:
         try:
@@ -135,14 +137,15 @@ class MainMenu:
             return surf
 
     def update_sfx_volume(self) -> None:
-        for sound in [
-            self.click_sound,
-            self.play_sound,
-            self.hit_sound,
-            self.miss_sound,
-        ]:
-            if sound:
-                sound.set_volume(self.volume)
+        if pygame.mixer:
+            for sound in [
+                self.click_sound,
+                self.play_sound,
+                self.hit_sound,
+                self.miss_sound,
+            ]:
+                if sound:
+                    sound.set_volume(self.volume)
 
     def play_combat_sound(self, result: ShotResult) -> None:
         if result in [ShotResult.Hit, ShotResult.Sunk] and self.hit_sound:
