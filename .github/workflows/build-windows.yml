@@ -1,0 +1,39 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies and pyinstaller
+        run: |
+          uv venv
+          uv pip install .
+          uv pip install pyinstaller
+
+      - name: Build EXE with PyInstaller
+        run: |
+          uv run pyinstaller --noconfirm --onefile --windowed --name "Battleships LAN" --collect-all battleship_pygame_lan src/battleship_pygame_lan/__main__.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Battleships-LAN-Windows
+          path: "dist/Battleships LAN.exe"
