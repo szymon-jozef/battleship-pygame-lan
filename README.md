@@ -55,7 +55,7 @@ imports = [
 programs.battleship-pygame-lan.enable = true;
 ```
 
-# Windows
+## Windows
 Install and run .exe file from the release tab
 
 # Tech stack
