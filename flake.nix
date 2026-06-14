@@ -139,7 +139,7 @@
               }
               ''
                 mkdir -p $out/bin $out/share/battleship-pygame-lan
-                cp -R ${./assets} $out/share/battleship-pygame-lan/assets
+                cp -R ${./src/battleship_pygame_lan/gui/assets} $out/share/battleship-pygame-lan/assets
                 makeWrapper ${venv}/bin/battleship-pygame-lan $out/bin/battleship-pygame-lan \
                   --prefix LD_LIBRARY_PATH : "${pkgs.lib.makeLibraryPath runtimeLibs}" \
                   --set SDL_VIDEODRIVER "wayland,x11" \
