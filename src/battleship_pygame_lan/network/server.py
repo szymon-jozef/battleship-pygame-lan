@@ -3,6 +3,7 @@ import logging
 import socket
 import threading
 from contextlib import suppress
+from platform import system
 
 from battleship_pygame_lan.logic import ShotResult
 
@@ -24,6 +25,12 @@ class NetworkServer(NetworkCore):
     def __init__(self, server_ip: str = "127.0.0.1") -> None:
         super().__init__(ip_address=server_ip)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        if system() in ["Linux", "Darwin"]:
+            self.server.setsockopt(
+                socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
+            )  # no need to wait until OS decides to release the port
+
         self.MAX_PLAYERS: int = 2
         self.players_lock = threading.Lock()
         self.players: list[NetworkPlayer] = []
