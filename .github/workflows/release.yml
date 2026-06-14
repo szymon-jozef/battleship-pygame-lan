@@ -1,13 +1,21 @@
-name: Build Windows EXE
+name: Build and Release Binaries
 
 on:
   workflow_dispatch:
   release:
-    types: [created]
+    types: [published] 
+
+permissions:
+  contents: write 
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,10 +38,10 @@ jobs:
 
       - name: Build EXE with PyInstaller
         run: |
-          uv run pyinstaller --noconfirm --onefile --windowed --name "Battleships LAN" --collect-all battleship_pygame_lan src/battleship_pygame_lan/__main__.py
+          uv run pyinstaller --noconfirm --onefile --windowed --name "Battleships-LAN-${{ runner.os }}" --collect-all battleship_pygame_lan src/battleship_pygame_lan/__main__.py
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
         with:
-          name: Battleships-LAN-Windows
-          path: "dist/Battleships LAN.exe"
+          files: dist/Battleships-LAN-* 
