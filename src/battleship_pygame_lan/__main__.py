@@ -15,6 +15,7 @@ from battleship_pygame_lan.game_manager.enums import GuiEvent
 from battleship_pygame_lan.gui.board_render import BoardRenderer
 from battleship_pygame_lan.gui.main_menu import MainMenu, get_assets_path
 from battleship_pygame_lan.logic import ShipType
+from battleship_pygame_lan.logic.enums import FieldState
 from battleship_pygame_lan.network import GameState
 from battleship_pygame_lan.network.models import ReadyType
 from battleship_pygame_lan.network.payloads import build_ready_payload
@@ -302,6 +303,9 @@ def main() -> None:
                         cell = renderer.get_clicked_cell(pos, 550, 80)
                         if cell:
                             row, col = cell
+                            current_state = gm.player.radar.get_field_state(row, col)
+
+                        if current_state in (FieldState.Empty, FieldState.Taken):
                             try:
                                 gm.player.name = gm.network_client.player_name
                                 gm.shoot(row, col)
