@@ -18,7 +18,6 @@ from battleship_pygame_lan.logic import ShipType
 from battleship_pygame_lan.logic.enums import FieldState
 from battleship_pygame_lan.network import GameState
 from battleship_pygame_lan.network.models import ReadyType
-from battleship_pygame_lan.network.payloads import build_ready_payload
 from battleship_pygame_lan.network.server import NetworkServer
 
 
@@ -320,12 +319,7 @@ def main() -> None:
                 and not ready_sent
             ):
                 print(f"[Game] Fleet ready. Sending SHIP_PLACED to: {gm.player.name}")
-                ready_payload = build_ready_payload(
-                    gm.player.name, valid_ready_type, True
-                )
-                gm.network_client.send_to_socket(
-                    gm.network_client.client, ready_payload
-                )
+                gm.network_client.ready(valid_ready_type)
                 ready_sent = True
 
             gm.handle_response()
