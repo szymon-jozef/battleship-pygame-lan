@@ -229,7 +229,7 @@ class NetworkServer(NetworkCore):
                 self._handle_shot_result(payload_data, msg)
 
             case PayloadTypes.LOST.value:
-                loser: str = payload_data.get("loser")
+                loser: str = payload_data.get("player_name")
                 self._end_game(loser)
 
             case _:
