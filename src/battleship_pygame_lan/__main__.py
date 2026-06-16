@@ -328,48 +328,56 @@ def main() -> None:
             try:
                 while True:
                     gui_event = gm.gui_events_queue.get_nowait()
-                    if gui_event == GuiEvent.ShotHit:
-                        print("[GUI EVENT] HIT!")
-                        if hit_sound:
-                            hit_sound.play()
 
-                        player_stats["shots"] += 1
-                        player_stats["hits"] += 1
-                        player_stats["current_streak"] += 1
+                    match gui_event:
+                        case GuiEvent.ShotHit:
+                            print("[GUI EVENT] HIT!")
+                            if hit_sound:
+                                hit_sound.play()
 
-                        if player_stats["current_streak"] > player_stats["max_streak"]:
-                            player_stats["max_streak"] = player_stats["current_streak"]
+                            player_stats["shots"] += 1
+                            player_stats["hits"] += 1
+                            player_stats["current_streak"] += 1
 
-                    elif gui_event == GuiEvent.ShotSunk:
-                        print("[GUI EVENT] SHIP SUNK!")
-                        if sink_sound:
-                            sink_sound.play()
+                            if (
+                                player_stats["current_streak"]
+                                > player_stats["max_streak"]
+                            ):
+                                player_stats["max_streak"] = player_stats[
+                                    "current_streak"
+                                ]
 
-                        player_stats["shots"] += 1
-                        player_stats["hits"] += 1
-                        player_stats["sunk"] += 1
-                        player_stats["current_streak"] += 1
+                        case GuiEvent.ShotSunk:
+                            print("[GUI EVENT] SHIP SUNK!")
+                            if sink_sound:
+                                sink_sound.play()
 
-                    elif gui_event == GuiEvent.ShotMissed:
-                        print("[GUI EVENT] MISS!")
-                        if miss_sound:
-                            miss_sound.play()
+                            player_stats["shots"] += 1
+                            player_stats["hits"] += 1
+                            player_stats["sunk"] += 1
+                            player_stats["current_streak"] += 1
 
-                        player_stats["shots"] += 1
-                        player_stats["misses"] += 1
-                        player_stats["current_streak"] = 0
+                        case GuiEvent.ShotMissed:
+                            print("[GUI EVENT] MISS!")
+                            if miss_sound:
+                                miss_sound.play()
 
-                    elif gui_event == GuiEvent.GameLost:
-                        print("[GUI EVENT] You lost...")
-                        end_game_winner = (
-                            gm.network_client.enemy_name or "UNKNOWN ENEMY"
-                        )
-                        game_state = "END_SCREEN"
+                            player_stats["shots"] += 1
+                            player_stats["misses"] += 1
+                            player_stats["current_streak"] = 0
 
-                    elif gui_event == GuiEvent.GameWon:
-                        print("[GUI EVENT] You won!")
-                        end_game_winner = menu.player_name
-                        game_state = "END_SCREEN"
+                        case GuiEvent.GameLost:
+                            print("[GUI EVENT] You lost...")
+                            end_game_winner = (
+                                gm.network_client.enemy_name or "UNKNOWN ENEMY"
+                            )
+                            game_state = "END_SCREEN"
+                            gm.network_client.disconnect()
+
+                        case GuiEvent.GameWon:
+                            print("[GUI EVENT] You won!")
+                            end_game_winner = menu.player_name
+                            game_state = "END_SCREEN"
 
                     gm.gui_events_queue.task_done()
             except Empty:
@@ -463,10 +471,9 @@ def main() -> None:
         pygame.display.flip()
         clock.tick(60)
 
-    if gm and gm.network_client:
-        gm.network_client.disconnect()
+        if gm and gm.network_client:
+            gm.network_client.disconnect()
 
-    pygame.quit()
     sys.exit()
 
 

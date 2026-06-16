@@ -53,7 +53,10 @@ class NetworkServer(NetworkCore):
 
         self.server.bind(self.ADDR)
         self.server.listen()
-        self.empty_event.set()
+
+        self.empty_event.clear()
+        threading.Thread(target=self._wait_and_stop, daemon=True).start()
+
         self.is_running = True
         try:
             while self.is_running:
@@ -145,7 +148,6 @@ class NetworkServer(NetworkCore):
                 return
 
         logger.info(f"[NEW CONNECTION] {addr} connected")
-        self.empty_event.clear()  # the server is no longer empty
         current_player = NetworkPlayer(conn=conn, addr=addr)
         with self.players_lock:
             self.players.append(current_player)
@@ -415,7 +417,6 @@ class NetworkServer(NetworkCore):
         self._broadcast(payload)
         self.current_game_state = GameState.FINISH
         self._change_game_state(self.current_game_state)
-        threading.Thread(target=self._wait_and_stop, daemon=True).start()
 
     def _wait_and_stop(self) -> None:
         """
