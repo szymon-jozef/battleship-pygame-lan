@@ -248,8 +248,6 @@ def main() -> None:
                         player_stats,
                     )
                     if btn_rect.collidepoint(event.pos):
-                        if gm and gm.network_client:
-                            gm.network_client.disconnect()
                         if server:
                             server = None
                         gm = None
@@ -374,7 +372,6 @@ def main() -> None:
                                 gm.network_client.enemy_name or "UNKNOWN ENEMY"
                             )
                             game_state = "END_SCREEN"
-                            gm.network_client.disconnect()
 
                         case GuiEvent.GameWon:
                             print("[GUI EVENT] You won!")
@@ -472,9 +469,6 @@ def main() -> None:
 
         pygame.display.flip()
         clock.tick(60)
-
-        if gm and gm.network_client:
-            gm.network_client.disconnect()
 
     sys.exit()
 
