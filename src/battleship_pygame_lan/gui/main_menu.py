@@ -1,5 +1,6 @@
 import importlib.resources as resource
 import os
+from importlib.metadata import version
 from typing import Any, cast
 
 import pygame
@@ -10,6 +11,7 @@ from ..game_manager.enums import GuiEvent
 from ..logic.enums import ShotResult
 
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 GRAY = (70, 70, 70)
 HOVER_COLOR = (0, 120, 215)
 BUTTON_BG = (20, 20, 30, 220)
@@ -41,6 +43,7 @@ class MainMenu:
         self.width, self.height = screen.get_size()
 
         self.font_title = pygame.font.SysFont("Arial", 80, bold=True)
+        self.font_version = pygame.font.SysFont("Arial", 12)
         self.font_button = pygame.font.SysFont("Arial", 38)
         self.font_label = pygame.font.SysFont("Arial", 28)
 
@@ -75,6 +78,7 @@ class MainMenu:
         self.input_field_rect = pygame.Rect(0, 0, 0, 0)
         self.slider_rect = pygame.Rect(0, 0, 300, 10)
         self.left_margin = 70
+        self.right_margin = 120
 
         self.main_buttons: list[dict[str, Any]] = [
             {"text": "Play", "pos_y": 240, "action": "show_modes"},
@@ -339,6 +343,17 @@ class MainMenu:
                 (self.left_margin, 80),
             )
             self._draw_buttons(self.main_buttons, m_pos)
+
+            # show version num in the right bottom corner ;)
+            version_surface = self.font_version.render(
+                f"Version: {version('battleship_pygame_lan')}", True, BLACK
+            )
+            self.screen.blit(
+                version_surface,
+                version_surface.get_rect(
+                    bottomright=(self.width - 20, self.height - 20)
+                ),
+            )
         else:
             active = self.menu_state if self.menu_state != "MAIN" else self.last_state
             off_y = int(self.panel_y)

@@ -22,17 +22,17 @@ wheels = [
 
 [[package]]
 name = "battleship-pygame-lan"
-version = "1.0.0"
+version = "1.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "appdirs" },
     { name = "pygame-ce" },
-    { name = "pyinstaller" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
+    { name = "pyinstaller" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -41,12 +41,12 @@ dev = [
 requires-dist = [
     { name = "appdirs", specifier = ">=1.4.4" },
     { name = "pygame-ce", specifier = ">=2.5.7" },
-    { name = "pyinstaller", specifier = ">=6.21.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=1.20.0" },
+    { name = "pyinstaller", specifier = ">=6.21.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.9" },
 ]
