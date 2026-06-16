@@ -1,9 +1,11 @@
+import argparse
 import contextlib
 import logging
 import socket
 import sys
 import threading
 import time
+from importlib.metadata import version
 from pathlib import Path
 from queue import Empty
 
@@ -480,4 +482,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog="Battleship-pygame-lan")
+    parser.add_argument(
+        "--version", action="store_true", help="Display version and exit"
+    )
+    parsed = parser.parse_args()
+
+    if parsed.version:
+        print("Version: ", version("battleship_pygame_lan"))
+    else:
+        main()
