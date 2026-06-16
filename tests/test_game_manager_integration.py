@@ -132,10 +132,9 @@ def test_full_game_flow() -> None:
         events.append(passive_gm.gui_events_queue.get())
     assert GuiEvent.GameWon in events, f"Expected GameWon, got {gui_event}"
 
-    # morbius lost
+    active_gm.handle_response()
+    passive_gm.handle_response()
 
-    gm_morbius.network_client.disconnect()
-    gm_venom.network_client.disconnect()
-    time.sleep(0.1)
+    time.sleep(0.5)
 
     assert len(server.players) == 0
