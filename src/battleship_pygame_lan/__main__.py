@@ -250,7 +250,6 @@ def main() -> None:
                         if gm and gm.network_client:
                             gm.network_client.disconnect()
                         if server:
-                            server.stop()
                             server = None
                         gm = None
                         game_state = "MENU"
@@ -472,8 +471,6 @@ def main() -> None:
 
     if gm and gm.network_client:
         gm.network_client.disconnect()
-    if server:
-        server.stop()
 
     pygame.quit()
     sys.exit()
