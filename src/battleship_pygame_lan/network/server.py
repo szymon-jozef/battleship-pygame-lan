@@ -87,7 +87,9 @@ class NetworkServer(NetworkCore):
                     player.conn.close()
             self.players.clear()
         with suppress(Exception):
+            self.server.shutdown(socket.SHUT_RDWR)
             self.server.close()
+
         logger.info("[Server] Server shutdown complete")
 
     def _broadcast(self, msg: str, sender_conn: socket.socket | None = None) -> None:
