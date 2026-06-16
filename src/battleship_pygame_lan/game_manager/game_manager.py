@@ -149,6 +149,8 @@ class GameManager:
         loser: str = str(message.get("loser"))
         if loser != self.player.name:
             self.gui_events_queue.put(GuiEvent.GameWon)
+        else:
+            self.gui_events_queue.put(GuiEvent.GameLost)
         self.network_client.disconnect()
 
     def _handle_shot_result(self, message: dict) -> None:
