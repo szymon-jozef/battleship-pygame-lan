@@ -61,6 +61,9 @@ Download and run `Battleships-LAN-Windows.exe` from the release tab
 ## Linux binary
 Download `Battleships-LAN-Linux` from the release tab, make it executable and run it. 
 
+## MacOS
+Download macos binary from release tab.
+
 # Tech stack
 This project utilises technologies like:
 - [python](https://www.python.org/) – language, with multiple modules like: logging, socket, threading, json and configparser, importlib, argparse

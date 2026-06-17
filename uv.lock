@@ -22,7 +22,7 @@ wheels = [
 
 [[package]]
 name = "battleship-pygame-lan"
-version = "1.1.3"
+version = "1.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "appdirs" },
